@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# set -o xtrace
+set -eu -o pipefail
+
+_source="${BASH_SOURCE[0]}"
+[ -z "${_source:-}" ] && _source="${0}"
+basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
+
+# shellcheck disable=SC1090
+. "$basedir/lib/paramstore.bash"
+
+TMPDIR=${TMPDIR:-/tmp}
+SSM_BASE_PATH="${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH:-/vendors/buildkite/secrets}"
+SSM_DEFAULT_KEY="global"
+
+secret_paths=("${SSM_BASE_PATH}/${SSM_DEFAULT_KEY}")
+
+# TODO: make pipeline key (BUILDKITE_PIPELINE_SLUG by default) configurable
+# TODO: make default key configurable
+if [ -n "${BUILDKITE_PIPELINE_SLUG:-}" ] ; then
+  secret_paths+=("${SSM_BASE_PATH}/${BUILDKITE_PIPELINE_SLUG}")
+fi
+
+
+echo "~~~ Downloading secrets from :aws: paramstore: $SSM_BASE_PATH" >&2;
+
+# shellcheck disable=SC2034
+env_before="$(env | sort)"  # used by dumpEnvSecrets
+
+for base_path in ${secret_paths[*]} ; do
+  echo "Checking paramstore secrets ${base_path}" >&2
+  processAnySecrets "${base_path}"
+done
+
+dumpEnvSecrets
+

@@ -1,0 +1,22 @@
+steps:
+  - label: ":shell: Shellcheck"
+    plugins:
+      shellcheck#v1.1.2:
+        files:
+          - hooks/**
+          - lib/**
+          - git-credential-parameterstore-secrets
+
+  - label: ":sparkles: Lint"
+    plugins:
+      plugin-linter#v2.0.0:
+        id: ssh://git@scm.tools.assemblypayments.com:7999/bkpl/ecs-task-buildkite-plugin.git
+
+  - label: ":suitest: unit test"
+    plugins:
+      docker-compose#v3.2.0:
+        run: tests
+        config:
+          - docker-compose.yml
+
+  
