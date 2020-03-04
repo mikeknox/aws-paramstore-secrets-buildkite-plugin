@@ -1,4 +1,4 @@
-# AWS Paramaterstore Secrets Buildkite Plugins
+# AWS Parameterstore Secrets Buildkite Plugins
 
 __This plugin was originally inspired and based on the the *AWS S3 Secrets Buildkite Plugin*__
 
