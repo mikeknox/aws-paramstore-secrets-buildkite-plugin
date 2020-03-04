@@ -10,6 +10,11 @@ basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 # shellcheck disable=SC1090
 . "$basedir/lib/paramstore.bash"
 
+if [ -f "./custom-defaults" ] ; then
+  # shellcheck disable=SC1091
+  . "./custom-defaults"
+fi
+
 TMPDIR=${TMPDIR:-/tmp}
 SSM_BASE_PATH="${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH:-/vendors/buildkite/secrets}"
 SSM_DEFAULT_KEY="${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY:-global}"
