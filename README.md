@@ -1,5 +1,3 @@
-[![Build status](https://badge.buildkite.com/04c3058f526f7019584f0d206996fd1ec3946c26b50edcd858.svg)](https://buildkite.com/assembly-payments/aws-paramstore--secrets-buildkite-plugin)
-
 # AWS Paramaterstore Secrets Buildkite Plugins
 
 __This plugin was originally inspired and based on the the *AWS S3 Secrets Buildkite Plugin*__
