@@ -30,10 +30,7 @@ load '/usr/local/lib/bats/load.bash'
   run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
 
   assert_success
-  # assert_output --partial "Getting secret: /base_path/global/env/envvar1"
-  # assert_output --partial "Getting secret: /base_path/testpipe/env/envvar2"
   assert_output --partial "envvar1=fooblah"
-  # assert_output --partial "key1=fookey"
 
   unstub aws
   unstub ssh-agent
@@ -46,6 +43,66 @@ load '/usr/local/lib/bats/load.bash'
   unset AWS_DEFAULT_REGION
 }
 
+@test "Load secrets using a non-std key" {
+  # export AWS_STUB_DEBUG=/dev/tty
+  export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=/base_path
+  export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true
+  export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY=BUILDKITE_REPO
+  export TESTDATA=`echo MY_SECRET=fooblah`
+  export AWS_DEFAULT_REGION=eu-boohar-99
+  export BUILDKITE_REPO=zzzzzz
+
+  stub aws \
+    "ssm describe-parameters --parameter-filters 'Key=Path,Option=Recursive,Values=/base_path/global' 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo -e '/base_path/global/env/envvar1'" \
+    "ssm get-parameter --name /base_path/global/env/envvar1 --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fooblah" \
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/base_path/zzzzzz 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo /base_path/zzzzzz/ssh/key1" \
+    "ssm get-parameter --name /base_path/zzzzzz/ssh/key1 --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fookey"
+
+  stub ssh-agent \
+    "-s : echo export SSH_AGENT_PID=26346"
+  stub ssh-add \
+    '- : echo added ssh key'
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "envvar1=fooblah"
+  unstub aws
+  unstub ssh-agent
+  unstub ssh-add
+
+  unset TESTDATA
+  unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV
+  unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH
+  unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY
+  unset AWS_DEFAULT_REGION
+  unset BUILDKITE_REPO
+}
+
+@test "Load customised default slug" {
+  # export AWS_STUB_DEBUG=/dev/tty
+  export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=/base_path
+  export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true
+  export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY=testpipe
+  export TESTDATA=`echo MY_SECRET=fooblah`
+  export AWS_DEFAULT_REGION=eu-boohar-99
+
+  stub aws \
+    "ssm describe-parameters --parameter-filters 'Key=Path,Option=Recursive,Values=/base_path/testpipe' 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo -e '/base_path/testpipe/env/envvar1'" \
+    "ssm get-parameter --name /base_path/testpipe/env/envvar1 --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fooblah"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit"
+
+  assert_success
+  assert_output --partial "envvar1=fooblah"
+
+  unstub aws
+
+  unset TESTDATA
+  unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV
+  unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH
+  unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY
+  unset AWS_DEFAULT_REGION
+}
 # TODO: test envvar clobber
 
 @test "Load default environment file from parameterstore" {

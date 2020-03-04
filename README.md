@@ -77,8 +77,15 @@ Alternative Base Path to use for secrets
 
 ### `secrets_key`
 
-__in development__
 defaults to: `BUILDKITE_PIPELINE_SLUG`
+
+Can be set to any valid environment variable, sych as `BUILDKITE_REPO`
+
+### `default_key`
+
+defaults to: `global`
+
+A slug for default secrets that are always loaded.
 
 ## Testing
 
