@@ -15,12 +15,13 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export TESTDATA=`echo MY_SECRET=fooblah`
+  export AWS_DEFAULT_REGION=eu-boohar-99
 
   stub aws \
-    "ssm describe-parameters --parameter-filters 'Key=Path,Values=/base_path/global' 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : echo -e '/base_path/global/env/envvar1'" \
-    "ssm get-parameter --name /base_path/global/env/envvar1 --with-decryption --query 'Parameter.[Value]' --output text : echo fooblah" \
-    "ssm describe-parameters --parameter-filters Key=Path,Values=/base_path/testpipe 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : echo /base_path/testpipe/ssh/key1" \
-    "ssm get-parameter --name /base_path/testpipe/ssh/key1 --with-decryption --query 'Parameter.[Value]' --output text : echo fookey"
+    "ssm describe-parameters --parameter-filters 'Key=Path,Option=Recursive,Values=/base_path/global' 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo -e '/base_path/global/env/envvar1'" \
+    "ssm get-parameter --name /base_path/global/env/envvar1 --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fooblah" \
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/base_path/testpipe 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo /base_path/testpipe/ssh/key1" \
+    "ssm get-parameter --name /base_path/testpipe/ssh/key1 --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fookey"
 
   stub ssh-agent \
     "-s : echo export SSH_AGENT_PID=26346"
@@ -42,6 +43,7 @@ load '/usr/local/lib/bats/load.bash'
   unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV
   unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH
   unset BUILDKITE_PIPELINE_SLUG
+  unset AWS_DEFAULT_REGION
 }
 
 # TODO: test envvar clobber

@@ -25,6 +25,8 @@ processAnySecrets() {
     esac
   
   done
+
+  return 0
 }
 
 processSshSecret() {
@@ -84,7 +86,8 @@ processGitCredentialsSecret() {
 dumpEnvSecrets() {
   if [[ "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV:-}" =~ ^(true|1)$ ]] ; then
     echo "~~~ Environment variables that were set" >&2;
-    env | sort
+
+    # shellcheck disable=SC2154 # var is defined as a global in hooks/environment
     comm -13 <(echo "$env_before") <(env | sort) || true
   fi
 }

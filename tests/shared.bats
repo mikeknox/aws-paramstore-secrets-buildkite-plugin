@@ -3,6 +3,7 @@
 load '/usr/local/lib/bats/load.bash'
 load '../lib/shared'
 
+# export AWS_STUB_DEBUG=/dev/tty
 # export SSH_AGENT_STUB_DEBUG=/dev/tty
 # export SSH_ADD_STUB_DEBUG=/dev/tty
 # export GIT_STUB_DEBUG=/dev/tty
@@ -10,8 +11,9 @@ load '../lib/shared'
 #-------
 # Default scope
 @test "list_secrets() - single secret" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   stub aws \
-    "ssm describe-parameters --parameter-filters Key=Path,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : echo -e '/path/env'"
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo -e '/path/env'"
 
   run list_secrets /path
 
@@ -22,13 +24,14 @@ load '../lib/shared'
 }
 
 @test "list_secrets() - multiple secrets" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   cat <<EOF >/tmp/$$.asset
 /path/env
 /path/key2/env
 EOF
 
   stub aws \
-    "ssm describe-parameters --parameter-filters Key=Path,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : cat /tmp/$$.asset"
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : cat /tmp/$$.asset"
 
   run list_secrets /path
 
@@ -40,13 +43,14 @@ EOF
 }
 
 @test "secret_exists() - success" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   cat <<EOF >/tmp/$$.asset
 /path/env
 /path/key2/env
 EOF
 
   stub aws \
-    "ssm describe-parameters --parameter-filters Key=Path,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : cat /tmp/$$.asset"
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : cat /tmp/$$.asset"
 
   run secret_exists /path env
 
@@ -56,13 +60,14 @@ EOF
 }
 
 @test "secret_exists() - failure" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   cat <<EOF >/tmp/$$.asset
 /path/env
 /path/key2/env
 EOF
 
   stub aws \
-    "ssm describe-parameters --parameter-filters Key=Path,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : cat /tmp/$$.asset"
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : cat /tmp/$$.asset"
 
   run secret_exists /path no_env
 
@@ -73,8 +78,9 @@ EOF
 
 
 @test "secret_download() - success" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   stub aws \
-    "ssm get-parameter --name /base_path/env --with-decryption --query 'Parameter.[Value]' --output text : echo fooblah"
+    "ssm get-parameter --name /base_path/env --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fooblah"
 
   run secret_download /base_path/env
 
@@ -86,8 +92,10 @@ EOF
 }
 
 @test "secret_download() - failure" {
+  # export AWS_STUB_DEBUG=/dev/tty
+  export AWS_DEFAULT_REGION=eu-boohar-99
   stub aws \
-    "ssm get-parameter --name /base_path/env --with-decryption --query 'Parameter.[Value]' --output text : exit 1"
+    "ssm get-parameter --name /base_path/env --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : exit 1"
 
   run secret_download /base_path/env
 
@@ -129,28 +137,28 @@ EOF
   run getSecretType "/base_path/boo" "/base_path/foo/ssh/bar"
 
   assert_output "unknown"
-  assert_failure
+  assert_success
 
   run getSecretType "/base_path" "/base_path/foo/ssh/bar"
 
   assert_output "unknown"
-  assert_failure
+  assert_success
 }
 
 @test "valid_type() - happy" {
-  run validType "ssh"
+  run valid_type "ssh"
   assert_success
 
-  run validType "env"
+  run valid_type "env"
   assert_success
 
-  run validType "git-creds"
+  run valid_type "git-creds"
   assert_success
 
 }
 
 @test "valid_type() - unhappy" {
-  run validType "sshasdad"
+  run valid_type "sshasdad"
 
   assert_failure
 }

@@ -16,9 +16,10 @@ load '/usr/local/lib/bats/load.bash'
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-parameterstore-secrets ${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH}/git-creds/foobar'"
   export TEST_CREDS1="https://user:password@host.io:7999/path"
+  export AWS_DEFAULT_REGION=eu-boohar-99
 
   stub aws \
-    "ssm get-parameter --name /base_path/git-creds/foobar --with-decryption --query 'Parameter.[Value]' --output text : echo ${TEST_CREDS1}"
+    "ssm get-parameter --name /base_path/git-creds/foobar --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo ${TEST_CREDS1}"
 
   run ./git-credential-parameterstore-secrets ${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH}/git-creds/foobar
 
@@ -34,16 +35,18 @@ load '/usr/local/lib/bats/load.bash'
   unset GIT_CONFIG_PARAMETERS
   unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH
   unset BUILDKITE_PIPELINE_SLUG
+  unset AWS_DEFAULT_REGION
 }
 
 @test "Get git-credentials with args from parameterstore" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=/base_path
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-parameterstore-secrets ${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH}/git-creds/foobar'"
   export TEST_CREDS1='https://user:password@host.io:7999/path?arg1=val1'
   
   stub aws \
-    "ssm get-parameter --name /base_path/git-creds/foobar --with-decryption --query 'Parameter.[Value]' --output text : echo ${TEST_CREDS1}"
+    "ssm get-parameter --name /base_path/git-creds/foobar --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo ${TEST_CREDS1}"
 
   run ./git-credential-parameterstore-secrets ${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH}/git-creds/foobar
 
@@ -59,4 +62,5 @@ load '/usr/local/lib/bats/load.bash'
   unset GIT_CONFIG_PARAMETERS
   unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_ADDR
   unset BUILDKITE_PIPELINE_SLUG
+  unset AWS_DEFAULT_REGION
 }

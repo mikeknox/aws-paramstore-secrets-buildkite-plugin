@@ -7,7 +7,7 @@ list_secrets() {
   local basePath="$1"
 
   local _list
-  _list="$(aws ssm describe-parameters --parameter-filters "Key=Path,Values=${basePath}" 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text)"
+  _list="$(aws ssm describe-parameters --parameter-filters "Key=Path,Option=Recursive,Values=${basePath}" 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region="${AWS_DEFAULT_REGION}" --output text)"
   local retVal=${PIPESTATUS[0]}
   echo "${_list:-}"
 
@@ -33,7 +33,7 @@ secret_exists() {
 secret_download() {
   local path="$1"
 
-  _secret="$(aws ssm get-parameter --name "${path}" --with-decryption --query 'Parameter.[Value]' --output text)"
+  _secret="$(aws ssm get-parameter --name "${path}" --with-decryption --query 'Parameter.[Value]' --region="${AWS_DEFAULT_REGION}" --output text)"
   # shellcheck disable=SC2181
   if [ "$?" -ne 0 ] ; then
     return 1
@@ -79,7 +79,7 @@ getSecretType() {
   done
 
   # echo "${secret_type:-}"  
-  validType "${secret_type:-}"
+  valid_type "${secret_type:-}"
   retVal=$?
 
   if [ ${retVal} -ne 0 ] ; then
@@ -87,10 +87,10 @@ getSecretType() {
   fi
 
   echo "${secret_type:-}"  
-  return $retVal
+  return 0
 }
 
-validType() {
+valid_type() {
   # Return success if the string we're passed is an accepted param type
   local type_to_validate="${1:-}"
   local secret_types=(

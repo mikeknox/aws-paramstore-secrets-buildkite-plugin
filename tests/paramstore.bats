@@ -6,6 +6,7 @@ load '../lib/paramstore'
 
 
 @test "processAnySecrets()" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   cat <<EOF >/tmp/$$.asset
 /base_path/env/foo
 /base_path/env/boo/barfoo
@@ -19,10 +20,10 @@ EOF
     '- : echo added ssh key'
 
   stub aws \
-    "ssm describe-parameters --parameter-filters Key=Path,Values=/base_path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --output text : cat /tmp/$$.asset" \
-    "ssm get-parameter --name /base_path/env/foo --with-decryption --query 'Parameter.[Value]' --output text : echo zip" \
-    "ssm get-parameter --name /base_path/env/boo/barfoo --with-decryption --query 'Parameter.[Value]' --output text : echo boo" \
-    "ssm get-parameter --name /base_path/ssh/bar --with-decryption --query 'Parameter.[Value]' --output text : echo fuzz"
+    "ssm describe-parameters --parameter-filters Key=Path,Option=Recursive,Values=/base_path 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : cat /tmp/$$.asset" \
+    "ssm get-parameter --name /base_path/env/foo --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo zip" \
+    "ssm get-parameter --name /base_path/env/boo/barfoo --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo boo" \
+    "ssm get-parameter --name /base_path/ssh/bar --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fuzz"
 
   run getAllEnvVarsAfterCmd processAnySecrets "/base_path"
 
@@ -36,8 +37,9 @@ EOF
 }
 
 @test "processEnvSecret()" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   stub aws \
-    "ssm get-parameter --name /base_path/env/foo --with-decryption --query 'Parameter.[Value]' --output text : echo bar"
+    "ssm get-parameter --name /base_path/env/foo --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo bar"
 
   run getAllEnvVarsAfterCmd processEnvSecret "/base_path/env/foo"
 
@@ -48,6 +50,7 @@ EOF
 }
 
 @test "processGitCredentialsSecret()" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   run getAllEnvVarsAfterCmd processGitCredentialsSecret "/base_path/git-creds/foo"
 
   assert_success
@@ -56,8 +59,9 @@ EOF
 }
 
 @test "processSshSecret()" {
+  export AWS_DEFAULT_REGION=eu-boohar-99
   stub aws \
-    "ssm get-parameter --name /base_path/ssh/foo --with-decryption --query 'Parameter.[Value]' --output text : echo bar"
+    "ssm get-parameter --name /base_path/ssh/foo --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo bar"
 
   run processSshSecret "/base_path/ssh/foo"
 

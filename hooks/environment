@@ -14,6 +14,16 @@ TMPDIR=${TMPDIR:-/tmp}
 SSM_BASE_PATH="${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH:-/vendors/buildkite/secrets}"
 SSM_DEFAULT_KEY="global"
 
+if [ -z "${AWS_DEFAULT_REGION:-}" ] && [ -n "${AWS_REGION:-}" ] ; then
+  AWS_DEFAULT_REGION="${AWS_REGION}"
+fi
+
+if [ -z "${AWS_DEFAULT_REGION:-}" ] ; then
+  echo "AWS_DEFAULT_REGION or AWS_REGION are required env vars"
+  exit 1
+fi
+# TODO: strip any trailing / from PATH
+
 secret_paths=("${SSM_BASE_PATH}/${SSM_DEFAULT_KEY}")
 
 # TODO: make pipeline key (BUILDKITE_PIPELINE_SLUG by default) configurable
@@ -24,6 +34,7 @@ fi
 
 
 echo "~~~ Downloading secrets from :aws: paramstore: $SSM_BASE_PATH" >&2;
+
 
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
