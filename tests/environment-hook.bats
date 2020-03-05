@@ -103,6 +103,30 @@ load '/usr/local/lib/bats/load.bash'
   unset BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY
   unset AWS_DEFAULT_REGION
 }
+
+@test "Load customised default slug via custom-defaults file" {
+  cat <<EOF >./custom-defaults
+BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=/base_path
+BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY=testpipe
+BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true
+AWS_DEFAULT_REGION=eu-boohar-99
+EOF
+
+  export TESTDATA=`echo MY_SECRET=fooblah`
+
+  stub aws \
+    "ssm describe-parameters --parameter-filters 'Key=Path,Option=Recursive,Values=/base_path/testpipe' 'Key=Type,Values=SecureString' --query 'Parameters[*][Name]' --region=eu-boohar-99  --output text : echo -e '/base_path/testpipe/env/envvar1'" \
+    "ssm get-parameter --name /base_path/testpipe/env/envvar1 --with-decryption --query 'Parameter.[Value]' --region=eu-boohar-99  --output text : echo fooblah"
+
+  run bash -c "$PWD/hooks/environment && $PWD/hooks/pre-exit && rm ./custom-defaults"
+
+  assert_success
+  assert_output --partial "envvar1=fooblah"
+
+  unstub aws
+
+  unset TESTDATA
+}
 # TODO: test envvar clobber
 
 @test "Load default environment file from parameterstore" {

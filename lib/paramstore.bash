@@ -61,7 +61,7 @@ processEnvSecret() {
     exit 1
   fi
 
-  envscript="${key_name}=${secret}"
+  envscript="${key_name}='${secret}'"
   echo "Evaluating ${#envscript} bytes of env"
   set -o allexport
   eval "$envscript"
