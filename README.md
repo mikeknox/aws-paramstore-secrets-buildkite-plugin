@@ -39,6 +39,31 @@ steps:
           path: /base_path
 ```
 
+## IAM permissions
+
+The agent needs to have the following permissions in IAM to access the secrets:
+
+```yml
+{
+    "Action": [
+        "ssm:GetParameter*"
+    ],
+    "Resource": [
+        "arn:aws:ssm:<region>:<account>:parameter/<secret path>*"
+    ],
+    "Effect": "Allow"
+},
+{
+    "Action": [
+        "ssm:DescribeParameters"
+    ],
+    "Resource": [
+        "arn:aws:ssm:<region>:<account>:*"
+    ],
+    "Effect": "Allow"
+}
+```
+
 ## Uploading Secrets
 
 ### Environment secrets
