@@ -7,50 +7,28 @@ _source="${BASH_SOURCE[0]}"
 [ -z "${_source:-}" ] && _source="${0}"
 basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 
-# shellcheck disable=SC1090
-. "$basedir/lib/paramstore.bash"
+dumpEnvSecrets() {
+  if [[ "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV:-}" =~ ^(true|1)$ ]] ; then
+    echo "~~~ Environment variables that were set" >&2;
+
+    # shellcheck disable=SC2154 # var is defined as a global in hooks/environment
+    comm -13 <(echo "$env_before") <(env | sort) || true
+  fi
+}
 
 if [ -f "./custom-defaults" ] ; then
   # shellcheck disable=SC1091
   . "./custom-defaults"
 fi
 
-TMPDIR=${TMPDIR:-/tmp}
-SSM_BASE_PATH="${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH:-/vendors/buildkite/secrets}"
-SSM_DEFAULT_KEY="${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY:-global}"
-
-if [ -z "${AWS_DEFAULT_REGION:-}" ] && [ -n "${AWS_REGION:-}" ] ; then
-  AWS_DEFAULT_REGION="${AWS_REGION}"
-fi
-
-if [ -z "${AWS_DEFAULT_REGION:-}" ] ; then
-  echo "AWS_DEFAULT_REGION or AWS_REGION are required env vars"
-  exit 1
-fi
-# TODO: strip any trailing / from PATH
-
-if [ -z "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY:-}" ] ; then
-  BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY="BUILDKITE_PIPELINE_SLUG"
-fi
-
-secret_paths=("${SSM_BASE_PATH}/${SSM_DEFAULT_KEY}")
-
-# TODO: make pipeline key (BUILDKITE_PIPELINE_SLUG by default) configurable
-# TODO: make default key configurable
-if [ -n "${!BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY:-}" ] ; then
-  secret_paths+=("${SSM_BASE_PATH}/${!BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY}")
-fi
-
-# exit
-echo "~~~ Downloading secrets from :aws: paramstore: $SSM_BASE_PATH" >&2;
-
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
 
-for base_path in ${secret_paths[*]} ; do
-  echo "Checking paramstore secrets ${base_path}" >&2
-  processAnySecrets "${base_path}"
-done
+envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${basedir}/lib//environment.py")"
+set -o allexport
+# shellcheck disable=SC1090
+source <( echo "$envscript" )
+set +o allexport
 
 dumpEnvSecrets
 
