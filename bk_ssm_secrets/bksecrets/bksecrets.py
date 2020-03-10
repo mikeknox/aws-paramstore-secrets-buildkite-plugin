@@ -1,4 +1,5 @@
-
+import sys
+import subprocess
 from . import ssm_parameter_store
 # from ssm_parameter_store import EC2ParameterStore
 import boto3
@@ -34,14 +35,55 @@ class BkSecrets(object):
         os.environ[key] = self.store[slug]['env'][key]
 
     def process_ssh_secret(self, slug, key):
-        print("key:", key)
+        ssh_key = self.store[slug]['ssh'][key]
+
+        if not 'SSH_AGENT_PID' in os.environ:
+            if shared.shared.verbose():
+                print("Starting an ephemeral ssh-agent", file=sys.stderr)
+
+            ssh_agent_process = subprocess.run(['ssh-agent', '-s'], text=True, capture_output=True)
+            shared.shared.extract_ssh_agent_envars(ssh_agent_process.stdout)
+            if shared.shared.verbose():
+                print("ssh-agent process return code:", ssh_agent_process.returncode)
+                print("ssh-agent process stdout:", ssh_agent_process.stdout)
+                print("ssh-agent process stderr:", ssh_agent_process.stderr)
+
+        if 'SSH_AGENT_PID' in os.environ:
+            if shared.shared.verbose():
+                print("Loading ssh-key into ssh-agent (pid", os.environ['SSH_AGENT_PID'], ")", file=sys.stderr)
+
+            os.environ['SSH_ASKPASS'] = '/bin/false'
+            ssh_add_process = subprocess.run(['ssh-add', '-'],
+                env=None, input=ssh_key+'\n', text=True, capture_output=True)
+            del os.environ['SSH_ASKPASS']
+
+            if shared.shared.verbose():
+                print("ssh-add process return code:", ssh_add_process.returncode)
+                print("ssh-add process stdout:", ssh_add_process.stdout)
+                print("ssh-add process stderr:", ssh_add_process.stderr)
+
 
     def process_gitcred_secret(self, slug, key):
-        print("key:", key)
+        if shared.shared.verbose():
+            print("slug:", slug, "key:", key)
+            print("Adding git-credentials in $path as a credential helper", file=sys.stderr)
+
+        
+        # processGitCredentialsSecret() {
+        #   local path="$1"
+        #   git_credentials=()
+        #   echo "Adding git-credentials in $path as a credential helper" >&2;
+        #   git_credentials+=("'credential.helper=$basedir/git-credential-parameterstore-secrets ${path}'")
+        #   if [[ "${#git_credentials[@]}" -gt 0 ]] ; then
+        #     export GIT_CONFIG_PARAMETERS
+        #     GIT_CONFIG_PARAMETERS=$( IFS=' '; echo -n "${git_credentials[*]}" )
+        #   fi
+        # }
 
     def check_pipeline_acl(self, slug=None):
         pipeline_allowed = True
-        print(self.store[slug].keys())
+        if shared.shared.verbose():
+            print(self.store[slug].keys())
         if 'allowed_pipelines' in self.store[slug]:
             # if os.environ['BUILDKITE_PIPELINE_SLUG'] is in list allow
             pipeline_allowed = False

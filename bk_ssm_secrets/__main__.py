@@ -16,14 +16,16 @@ bksecret_store = bksecrets.bksecrets.BkSecrets(base_path=ssm_base_path)
 if key_value:
     secrets_path.append(key_value)
 
-# print("~~~ Downloading secrets from :aws: paramstore:", ssm_base_path)
+if shared.shared.verbose():
+    print("~~~ Downloading secrets from :aws: paramstore:", ssm_base_path)
 env_before = os.environ.copy()    # In Python dict assingments are references
 
 # import code
 # code.interact(local=locals())
 
 for path_node in secrets_path:
-    # print("Checking paramstore secrets in:", path_node)
+    if shared.shared.verbose():
+        print("Checking paramstore secrets in:", path_node)
     bksecret_store.get_secrets(path_node)
 shared.shared.dump_env_secrets(env_before)    
 
