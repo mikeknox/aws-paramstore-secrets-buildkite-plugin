@@ -4,8 +4,8 @@
 set -eu -o pipefail
 
 _source="${BASH_SOURCE[0]}"
-[ -z "${_source:-}" ] && _source="${0}"
-basedir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
+[ -z "${_source_dir:-}" ] && _source="${0}"
+_source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 
 dumpEnvSecrets() {
   if [[ "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV:-}" =~ ^(true|1)$ ]] ; then
@@ -24,7 +24,7 @@ fi
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
 
-envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${basedir}/lib//environment.py")"
+envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true python3 -m "${_source_dir}/environment")" # "${_source_dir}/environment/main.py")"
 set -o allexport
 # shellcheck disable=SC1090
 source <( echo "$envscript" )

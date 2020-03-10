@@ -19,4 +19,9 @@ steps:
         config:
           - docker-compose.yml
 
-  
+  - label: ":suitest: python unit tests"
+    plugins:
+      docker-compose#v3.2.0:
+        run: pytests
+        config:
+          - docker-compose.yml

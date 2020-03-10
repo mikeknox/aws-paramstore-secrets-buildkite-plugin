@@ -1,3 +1,6 @@
 custom-defaults
 
 __pycache__
+*.pyc
+venv
+*.egg-info

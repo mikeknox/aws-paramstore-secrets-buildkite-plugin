@@ -17,3 +17,10 @@ services:
     working_dir: /plugin
     volumes:
       - ".:/plugin"
+
+  pytests:
+    image: python:3.7-alpine
+    command: python3 -m unittest
+    working_dir: /plugin
+    volumes:
+      - ".:/plugin"
