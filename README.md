@@ -18,6 +18,8 @@ Secrets (and in the clear) are exposed from a toplevel path (`BASE_PATH`):
 - `<BASE_PATH>/<pipeline slug>/ssh-agent/<key name>`
 - `<BASE_PATH>/<pipeline slug>/git-credential/<cred name>`
 
+The core functionality has been rewritten in Python as it provided incredibly difficult to parse repo URLs in a sane way.
+
 ## Note
 
 The existing S3 / Vault plugins do not break out the secrets individually.
@@ -63,6 +65,19 @@ The agent needs to have the following permissions in IAM to access the secrets:
     "Effect": "Allow"
 }
 ```
+
+## Access Controls
+
+A limited form of A.CL has been added to this plugin, each `<slug>` can contain:
+
+- `allowed_teams`   - A list of teams that can access the secrets at this node
+- `allowed_pipelines`   - A list of pipelines that can access the teams at this node
+
+If either of these params exist at a node, then access is denied unless the current team and/or pipeline is listed.
+
+### ACL Note
+
+Don't let this lul you into a false sense of security; as your agent has access to the Parameter Store tree with the secrets, any pipeline could bypass the plugin and access the secrets directly.
 
 ## Uploading Secrets
 
