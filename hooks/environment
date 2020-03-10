@@ -16,15 +16,16 @@ dumpEnvSecrets() {
   fi
 }
 
-if [ -f "./custom-defaults" ] ; then
-  # shellcheck disable=SC1091
-  . "./custom-defaults"
-fi
+# shellcheck disable=SC1091
+[ -f "./custom-defaults" ] && source "./custom-defaults"
+
+# shellcheck disable=SC1091
+[ -d ./venv ] && python_dir="venv/bin/"
 
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
 
-envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true python3 -m bk_ssm_secrets)"
+envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${python_dir:-}python3" -m bk_ssm_secrets)"
 set -o allexport
 # shellcheck disable=SC1090
 source <( echo "$envscript" )
