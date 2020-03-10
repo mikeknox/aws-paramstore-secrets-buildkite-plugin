@@ -37,3 +37,15 @@ def secrets_slug():
     if key_value and url_parser.valid_url(key_value):
         key_value = url_parser.url_to_key(key_value)
     return key_value
+
+def secret_types():
+    '''
+    Return an array of the secret types that we can retrieve.
+    This is derived from the env var BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES.
+    This is a colon delimited list.
+    '''
+
+    types = ['env', 'ssh', 'git-creds']
+    if 'BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES' in os.environ:
+        types = os.environ['BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES'].split(':')
+    return types

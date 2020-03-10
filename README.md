@@ -127,6 +127,10 @@ defaults to: `global`
 
 A slug for default secrets that are always loaded.
 
+### `tyes`
+
+Colon delimiited list of secret types to load
+
 ## Testing
 
 To run locally:

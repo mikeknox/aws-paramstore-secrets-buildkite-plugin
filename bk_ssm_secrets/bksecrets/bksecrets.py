@@ -21,15 +21,18 @@ class BkSecrets(object):
         if slug in self.store.keys() and self.check_acls(slug):
             keys = self.store[slug].keys()
 
-            if 'env' in keys:
-                for key in self.store[slug]['env'].keys():
-                    self.process_env_secret(slug, key)
-            if 'ssh' in keys:
-                for key in self.store[slug]['ssh'].keys():
-                    self.process_ssh_secret(slug, key)
-            if 'git-creds' in keys:
-                for key in self.store[slug]['git-creds'].keys():
-                    self.process_gitcred_secret(slug, key)
+            allowed_keys = set(keys).intersection(shared.config.secret_types())
+
+            for key in allowed_keys:
+                if key == 'env':
+                    for key in self.store[slug]['env'].keys():
+                        self.process_env_secret(slug, key)
+                if key == 'ssh':
+                    for key in self.store[slug]['ssh'].keys():
+                        self.process_ssh_secret(slug, key)
+                if key == 'git-creds':
+                    for key in self.store[slug]['git-creds'].keys():
+                        self.process_gitcred_secret(slug, key)
 
     def process_env_secret(self, slug, key):
         os.environ[key] = self.store[slug]['env'][key]
@@ -68,7 +71,6 @@ class BkSecrets(object):
             print("slug:", slug, "key:", key)
             print("Adding git-credentials in $path as a credential helper", file=sys.stderr)
 
-        
         # processGitCredentialsSecret() {
         #   local path="$1"
         #   git_credentials=()
