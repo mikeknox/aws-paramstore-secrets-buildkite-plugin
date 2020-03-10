@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 
-setup(name='Environment',
+setup(name='bk_ssm_secrets',
       version='0.2',
       description='BuildKite AWS SSM Paramterstore Secrets plugin',
       author='Michaek Knox',
