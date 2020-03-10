@@ -10,8 +10,8 @@ import os
 class BkSecrets(object):
     def __init__(self, ssm_client=None, base_path=None):
         self.ssm_client = ssm_client or self.get_ssm_client()
-        self.store = ssm_parameter_store.SSMParameterStore(prefix=base_path, ssm_client=self.ssm_client)
         self.base_path = base_path
+        self.store = ssm_parameter_store.SSMParameterStore(prefix=self.base_path, ssm_client=self.ssm_client)
 
     def get_ssm_client(self):
         aws_region = shared.config.check_aws_env()
