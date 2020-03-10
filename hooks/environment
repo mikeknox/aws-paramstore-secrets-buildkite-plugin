@@ -24,7 +24,7 @@ fi
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
 
-envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true python3 -m "${_source_dir}/environment")" # "${_source_dir}/environment/main.py")"
+envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true python3 -m bk_ssm_secrets)"
 set -o allexport
 # shellcheck disable=SC1090
 source <( echo "$envscript" )
