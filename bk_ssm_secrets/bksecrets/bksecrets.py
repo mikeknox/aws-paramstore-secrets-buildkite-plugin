@@ -18,7 +18,7 @@ class BkSecrets(object):
         return boto3.client('ssm', region_name=aws_region)
 
     def get_secrets(self, slug):
-        if self.check_team_allowed(slug):
+        if slug in self.store.keys() and self.check_acls(slug):
             keys = self.store[slug].keys()
 
             if 'env' in keys:
@@ -82,12 +82,10 @@ class BkSecrets(object):
 
     def check_pipeline_acl(self, slug=None):
         pipeline_allowed = True
-        if shared.shared.verbose():
-            print(self.store[slug].keys())
-        if 'allowed_pipelines' in self.store[slug]:
+        if slug in self.store.keys() and 'allowed_pipelines' in self.store[slug].keys():
             # if os.environ['BUILDKITE_PIPELINE_SLUG'] is in list allow
             pipeline_allowed = False
-            if 'BUILDKITE_PIPELINE_SLUG' in os.environ and os.environ['BUILDKITE_PIPELINE_SLUG'] in self.store['allowed_pipelines']:
+            if 'BUILDKITE_PIPELINE_SLUG' in os.environ and os.environ['BUILDKITE_PIPELINE_SLUG'] in self.store[slug]['allowed_pipelines'].split('\n'):
                 pipeline_allowed = True
 
         return pipeline_allowed
@@ -95,22 +93,20 @@ class BkSecrets(object):
     def check_team_allowed(self, slug=None):
         team_allowed = True # Allow access if ACL's are not set
 
-        if 'allowed_teams' in self.store[slug]:
+        if slug in self.store.keys() and 'allowed_teams' in self.store[slug].keys():
             # Compare os.environ['BUILDKITE_TEAMS'] (colon delimited list) with team_list
             # if there is a common value, return true
             team_allowed = False
 
             # TODO:validate envVar
-            if 'BUILDKITE_TEAMS' in os.environ:
-                current_teams = os.environ['BUILDKITE_TEAMS'].split(':')
-            else:
-                current_teams = 'No team has been defined'
+            if 'BUILDKITE_BUILD_CREATOR_TEAMS' in os.environ:
+                current_teams = os.environ['BUILDKITE_BUILD_CREATOR_TEAMS'].split(':')
 
-            if self.store[slug]['allowed_teams']:
-                allowed_teams = self.store[slug]['allowed_teams']
-                common_teams = set(allowed_teams).intersection(current_teams)
-                if len(common_teams) >= 1:
-                    team_allowed = True
+                if self.store[slug]['allowed_teams']:
+                    allowed_teams = self.store[slug]['allowed_teams'].split('\n')
+                    common_teams = set(allowed_teams).intersection(current_teams)
+                    if len(common_teams) >= 1:
+                        team_allowed = True
 
         return team_allowed
 

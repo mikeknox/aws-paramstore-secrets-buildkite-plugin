@@ -9,9 +9,6 @@ key_value = shared.config.secrets_slug()
 
 secrets_path = [ssm_default_key]
 
-# import code
-# code.interact(local=locals())
-
 bksecret_store = bksecrets.bksecrets.BkSecrets(base_path=ssm_base_path)
 if key_value:
     secrets_path.append(key_value)
@@ -19,9 +16,6 @@ if key_value:
 if shared.shared.verbose():
     print("~~~ Downloading secrets from :aws: paramstore:", ssm_base_path)
 env_before = os.environ.copy()    # In Python dict assingments are references
-
-# import code
-# code.interact(local=locals())
 
 for path_node in secrets_path:
     if shared.shared.verbose():
