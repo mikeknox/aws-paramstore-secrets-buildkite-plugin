@@ -21,7 +21,7 @@ def url_to_key(url):
     if parsed.port:
         key += ':' + str(parsed.port)
     if parsed.path:
-        key += '_' + parsed.path.strip('/').replace('/', '_')
+        key += '_' + parsed.path.strip('/').replace('/', '_').replace('~', '_')
     return key
 
 def parse_url(url):
