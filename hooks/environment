@@ -5,13 +5,10 @@ set -eu -o pipefail
 
 _source="${BASH_SOURCE[0]}"
 _source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
-_current_dir="$(pwd)"
 
 # shellcheck disable=SC1090
 [ -f "${_source_dir}/custom-defaults" ] && source "${_source_dir}/custom-defaults"
 
-# Not overly keen on this, Python can't seem to find the modules otherwise ...
-cd "${_source_dir}"
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
 
@@ -19,5 +16,3 @@ envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${python_dir
 set -o allexport
 eval "$envscript"
 set +o allexport
-
-cd "${_current_dir}"

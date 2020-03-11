@@ -11,6 +11,6 @@ echo "Install requirements"
 pip3 install -r bk_ssm_secrets/requirements.txt
 
 echo "and add the bk_ssm_secrets package"
-pip3 install -e bk_ssm_secrets
+pip3 install ./bk_ssm_secrets
 
 cd "${_current_dir}" || exit
