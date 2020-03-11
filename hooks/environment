@@ -20,12 +20,7 @@ dumpEnvSecrets() {
 [ -f "${_source_dir}/custom-defaults" ] && source "${_source_dir}/custom-defaults"
 
 # shellcheck disable=SC1091
-if [ -d "${_source_dir}/venv" ] ; then
-  python_dir="${_source_dir}/venv/bin/"
-  export VIRTUAL_ENV_DISABLE_PROMPT=true
-  # shellcheck disable=SC1090
-  source "${_source_dir}/venv/bin/activate"
-fi
+[ -d "${_source_dir}/venv" ] && python_dir="${_source_dir}/venv/bin/"
 
 # Not overly keen on this, Python can't seem to find the modules otherwise ...
 cd "${_source_dir}"
