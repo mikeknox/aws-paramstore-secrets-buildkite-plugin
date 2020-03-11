@@ -10,6 +10,10 @@ cd "${_source_dir}" || exit 1
 echo "Setup Python virtual env"
 python3 -m venv venv
 
+export VIRTUAL_ENV_DISABLE_PROMPT=true
+# shellcheck disable=SC1091
+source "./venv/bin/activate"
+
 echo "Install requirements"
 venv/bin/pip3 install -r bk_ssm_secrets/requirements.txt
 
