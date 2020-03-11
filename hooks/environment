@@ -1,26 +1,14 @@
 #!/bin/bash
 
-# set -o xtrace
+#set -o xtrace
 set -eu -o pipefail
 
 _source="${BASH_SOURCE[0]}"
 _source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 _current_dir="$(pwd)"
 
-dumpEnvSecrets() {
-  if [[ "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV:-}" =~ ^(true|1)$ ]] ; then
-    echo "~~~ Environment variables that were set" >&2;
-
-    # shellcheck disable=SC2154 # var is defined as a global in hooks/environment
-    comm -13 <(echo "$env_before") <(env | sort) || true
-  fi
-}
-
 # shellcheck disable=SC1090
 [ -f "${_source_dir}/custom-defaults" ] && source "${_source_dir}/custom-defaults"
-
-# shellcheck disable=SC1091
-[ -d "${_source_dir}/venv" ] && python_dir="${_source_dir}/venv/bin/"
 
 # Not overly keen on this, Python can't seem to find the modules otherwise ...
 cd "${_source_dir}"
@@ -29,9 +17,7 @@ env_before="$(env | sort)"  # used by dumpEnvSecrets
 
 envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${python_dir:-}python3" -m bk_ssm_secrets)"
 set -o allexport
-# shellcheck disable=SC1090
-source <( echo "$envscript" )
+eval "$envscript"
 set +o allexport
 
-dumpEnvSecrets
 cd "${_current_dir}"
