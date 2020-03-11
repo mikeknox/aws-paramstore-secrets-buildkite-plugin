@@ -48,4 +48,4 @@ def dump_env_secrets(env_before):
 
         for key in diff:
             value = "'" + os.environ[key] + "'"
-            print(key, value, sep='=')
+            print("export ", key, "=", value, sep='')
