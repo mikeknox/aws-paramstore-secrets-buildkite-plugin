@@ -1,8 +1,8 @@
 import os
 
 import boto3
-from . import url_parser
-from . import config
+from bk_ssm_secrets.shared import url_parser
+from bk_ssm_secrets.shared import config
 
 def env_is_true(env_var):
     if env_var in os.environ:
@@ -38,7 +38,7 @@ def extract_ssh_agent_envars(agent_output):
             os.environ[key_val_pair[0]]  = key_val_pair[1]
 
     return agent_env_vars
-    
+
 def dump_env_secrets(env_before):
     if env_is_true('BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV'):
         env_now = os.environ
