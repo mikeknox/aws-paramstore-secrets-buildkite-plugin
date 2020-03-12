@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
 
-echo "Get working dir"
 _source="${BASH_SOURCE[0]}"
 _source_dir="$( cd "$( dirname "${_source}" )" && pwd )"
-_current_dir="$(pwd)"
-
-cd "${_source_dir}" || exit 1
 
 echo "Install requirements"
-pip3 install -r bk_ssm_secrets/requirements.txt
+pip3 install -r "${_source_dir}/bk_ssm_secrets/requirements.txt"
 
 echo "and add the bk_ssm_secrets package"
-pip3 install ./bk_ssm_secrets
-
-cd "${_current_dir}" || exit
+pip3 install "${_source_dir}/bk_ssm_secrets"
