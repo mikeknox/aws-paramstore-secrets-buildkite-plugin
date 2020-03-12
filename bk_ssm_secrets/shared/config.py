@@ -12,19 +12,18 @@ def check_aws_env():
     return aws_region
 
 def base_path():
+    ssm_base_path = '/vendors/buildkite/secrets'
     if 'BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH' in os.environ:
         ssm_base_path = os.environ['BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH']
-    else:
-        ssm_base_path = '/vendors/buildkite/secrets'
 
     return ssm_base_path
 
 def default_slug():
+    slug = 'global'
     if 'BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY' in os.environ:
-        ssm_default_key = os.environ['BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY']
-    else:
-        ssm_default_key = 'global'
-    return ssm_default_key
+        slug = os.environ['BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY']
+
+    return slug
 
 def secrets_slug():
     key_value = ''
