@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 import os
-from . import config
+from bk_ssm_secrets.shared import config
 
 # from ./environment.py # import *
 # from environment import base_path

@@ -1,5 +1,7 @@
 import os
-from . import url_parser
+
+from bk_ssm_secrets.shared import url_parser
+
 
 def check_aws_env():
     # AWS_REGION
