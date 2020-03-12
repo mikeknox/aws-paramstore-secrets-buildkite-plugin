@@ -12,7 +12,7 @@ _source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 # shellcheck disable=SC2034
 env_before="$(env | sort)"  # used by dumpEnvSecrets
 
-envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${python_dir:-}python3" -m bk_ssm_secrets)"
+envscript="$(PYTHONPATH="${_source_dir}:${PYTHONPATH:-}" BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true "${python_dir:-}python3" -m bk_ssm_secrets)"
 set -o allexport
 eval "$envscript"
 set +o allexport
