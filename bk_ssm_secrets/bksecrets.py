@@ -4,10 +4,10 @@ import sys
 import subprocess
 
 import boto3
-from . import config, ssm_parameter_store
+from . import config, helpers, ssm_parameter_store
 
 
-config.setup_logging()
+helpers.setup_logging()
 
 
 class BkSecrets(object):
@@ -48,7 +48,7 @@ class BkSecrets(object):
             ssh_agent_process = subprocess.run(
                 ['ssh-agent', '-s'], text=True, capture_output=True
             )
-            config.extract_ssh_agent_envars(ssh_agent_process.stdout)
+            helpers.extract_ssh_agent_envars(ssh_agent_process.stdout)
             logging.debug(
                 f"ssh-agent process return code: {ssh_agent_process.returncode}"
             )

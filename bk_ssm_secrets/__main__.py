@@ -1,11 +1,11 @@
 import os
 import logging
 
-from . import config
+from . import config, helpers
 from .bksecrets import BkSecrets
 
 
-config.setup_logging()
+helpers.setup_logging()
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     bksecret_store = BkSecrets()
     logging.debug(f"Running in {config.MODE} mode.")
     if config.MODE == "repo":
-        secrets_path.append(config.url_to_slug(os.environ["BUILDKITE_REPO"]))
+        secrets_path.append(helpers.url_to_slug(os.environ["BUILDKITE_REPO"]))
     else:
         secrets_path.append(os.environ["BUILDKITE_PIPELINE_SLUG"])
 
@@ -29,7 +29,7 @@ def main():
         logging.debug(f"Checking paramstore secrets in: {path_node}")
         bksecret_store.get_secrets(path_node)
 
-    config.dump_env_secrets(env_before)
+    helpers.dump_env_secrets(env_before)
 
 
 if __name__ == '__main__':
