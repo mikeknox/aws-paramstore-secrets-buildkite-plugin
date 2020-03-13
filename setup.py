@@ -11,7 +11,7 @@ if __name__ == "__main__":
         author_email='mike@hfnix.net',
         url='https://hfnix.net/bk',
         packages=setuptools.find_packages(),
-        install_requires=["boto3", "rfc3987"],
+        install_requires=["boto3"],
         entry_points={
             'console_scripts': ['bk-ssm-secrets = bk_ssm_secrets.__main__:main']
         },
