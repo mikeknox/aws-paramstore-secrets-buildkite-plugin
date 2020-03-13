@@ -18,7 +18,7 @@ DEFAULT_SLUG = os.environ.get(
 SECRET_TYPES = os.environ.get(
     "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES", "env:ssh:git-creds"
 ).split(":")
-MODE = os.environ.get("BUILDKITE_PLUGIN_AWS_PARAMSTORE_MODE", "pipeline")
+MODE = os.environ.get("BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_MODE", "pipeline")
 
 
 def setup_logging():
@@ -65,25 +65,14 @@ def dump_env_secrets(env_before):
         print(f"export {key}={shlex.quote(os.environ[key])}")
 
 
-def secrets_slug():
-    pipeline_key = "BUILDKITE_PIPELINE_SLUG"
-    repo_key = "BUILDKITE_REPO"
-
-    if MODE == "pipeline":
-        return os.environ[pipeline_key]
-
-    url = os.environ[repo_key]
-
+def url_to_slug(url):
     parsed = urlparse(url)
     if parsed.scheme == "":
         raise ValueError(f"Invalid URL scheme found: {url}")
 
-    key = f"{parsed.hostname}"
+    slug = f"{parsed.hostname}"
     if parsed.port:
-        key += f":{parsed.port}"
+        slug += f":{parsed.port}"
     if parsed.path:
-        key += "_" + parsed.path.strip("/").replace("/", "_").replace("~", "_")
-    return key
-
-
-SECRETS_SLUG = secrets_slug()
+        slug += "_" + parsed.path.strip("/").replace("/", "_").replace("~", "_")
+    return slug

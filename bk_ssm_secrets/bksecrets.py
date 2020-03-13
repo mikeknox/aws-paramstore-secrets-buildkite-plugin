@@ -11,17 +11,18 @@ config.setup_logging()
 
 
 class BkSecrets(object):
-    def __init__(self, ssm_client=None, ):
+    def __init__(self):
         self.store = ssm_parameter_store.SSMParameterStore(
-            prefix=config.BASE_PATH,
-            ssm_client=boto3.client("ssm") if ssm_client is None else ssm_client
+            prefix=config.BASE_PATH
         )
 
     def get_secrets(self, slug):
+        logging.debug(f"In get_secrets: {slug}")
         if slug in self.store and self.check_acls(slug):
             keys = self.store[slug].keys()
 
-            allowed_keys = set(keys).intersection(config.SECRET_TYPES)
+            allowed_keys = set(keys) & set(config.SECRET_TYPES)
+            logging.debug(f"Allowed keys: {allowed_keys}")
 
             for key in allowed_keys:
                 if key == 'env':
@@ -35,6 +36,7 @@ class BkSecrets(object):
                         self.process_gitcred_secret(slug, key)
 
     def process_env_secret(self, slug, key):
+        logging.debug(f"process env: {slug}, {key}")
         os.environ[key] = self.store[slug]['env'][key]
 
     def process_ssh_secret(self, slug, key):
@@ -57,7 +59,6 @@ class BkSecrets(object):
                 f"ssh-agent process stderr: {ssh_agent_process.stderr}"
             )
 
-
         if 'SSH_AGENT_PID' in os.environ:
             logging.debug(
                 f"Loading ssh-key into agent (pid {os.environ['SSH_AGENT_PID']})"
@@ -74,11 +75,10 @@ class BkSecrets(object):
             logging.debug("ssh-add process stdout:", ssh_add_process.stdout)
             logging.debug("ssh-add process stderr:", ssh_add_process.stderr)
 
-
     def process_gitcred_secret(self, slug, key):
+        # FIXME: not implemented yet
         logging.debug("slug:", slug, "key:", key)
         logging.debug("Adding git-credentials in $path as a credential helper", file=sys.stderr)
-
 
     def check_pipeline_acl(self, slug=None):
         pipeline_allowed = True

@@ -13,8 +13,11 @@ def main():
     secrets_path = [config.DEFAULT_SLUG]
 
     bksecret_store = BkSecrets()
-    if config.SECRETS_SLUG:
-        secrets_path.append(config.SECRETS_SLUG)
+    logging.debug(f"Running in {config.MODE} mode.")
+    if config.MODE == "repo":
+        secrets_path.append(config.url_to_slug(os.environ["BUILDKITE_REPO"]))
+    else:
+        secrets_path.append(os.environ["BUILDKITE_PIPELINE_SLUG"])
 
     logging.debug(
         f"Downloading secrets from paramstore: {config.BASE_PATH}"
