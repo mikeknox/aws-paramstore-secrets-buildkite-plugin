@@ -21,23 +21,21 @@ class BkSecrets(object):
         if slug in self.store and self.check_acls(slug):
             keys = self.store[slug].keys()
 
-            allowed_keys = set(keys) & set(config.SECRET_TYPES)
-            logging.debug(f"Allowed keys: {allowed_keys}")
+            allowed_types = set(keys) & set(config.SECRET_TYPES)
+            logging.debug(f"Allowed types: {allowed_types}")
 
-            for key in allowed_keys:
-                if key == 'env':
-                    for key in self.store[slug]['env'].keys():
-                        self.process_env_secret(slug, key)
-                if key == 'ssh':
-                    for key in self.store[slug]['ssh'].keys():
-                        self.process_ssh_secret(slug, key)
-                if key == 'git-creds':
-                    for key in self.store[slug]['git-creds'].keys():
-                        self.process_gitcred_secret(slug, key)
+            for type_ in allowed_types:
+                for key in self.store[slug][type_].keys():
+                    processor = getattr(
+                        self, f"process_{type_.replace('-', '_')}_secret"
+                    )
+                    processor(slug, key)
 
     def process_env_secret(self, slug, key):
-        logging.debug(f"process env: {slug}, {key}")
-        os.environ[key] = self.store[slug]['env'][key]
+        value = self.store[slug]['env'][key]
+        logging.debug(f"current env: {key} is `{os.environ.get('key', '')}`")
+        logging.debug(f"set env: {key} to `{value}`")
+        os.environ[key] = value
 
     def process_ssh_secret(self, slug, key):
         ssh_key = self.store[slug]['ssh'][key]

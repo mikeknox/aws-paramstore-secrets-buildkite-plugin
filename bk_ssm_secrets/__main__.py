@@ -26,7 +26,9 @@ def main():
     env_before = os.environ.copy()  # In Python dict assingments are references
 
     for path_node in secrets_path:
-        logging.debug(f"Checking paramstore secrets in: {path_node}")
+        logging.debug(
+            f"Checking paramstore secrets in: {config.BASE_PATH}/{path_node}"
+        )
         bksecret_store.get_secrets(path_node)
 
     helpers.dump_env_secrets(env_before)

@@ -45,8 +45,17 @@ def extract_ssh_agent_envars(agent_output):
 
 def dump_env_secrets(env_before):
     # Get difference in sets
+    logging.debug(f"before: {env_before}")
+    logging.debug(f"now: {os.environ}")
+    for key in set(os.environ) & set(env_before):
+        if os.environ[key] != env_before[key]:
+            export = f"export {key}={shlex.quote(os.environ[key])}"
+            logging.debug(f"exporting: {export}")
+            print(export)
     for key in set(os.environ) - set(env_before):
-        print(f"export {key}={shlex.quote(os.environ[key])}")
+        export = f"export {key}={shlex.quote(os.environ[key])}"
+        logging.debug(f"exporting: {export}")
+        print(export)
 
 def url_to_slug(url):
     parsed = urlparse(url)
