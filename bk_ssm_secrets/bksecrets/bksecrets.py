@@ -9,13 +9,9 @@ import os
 
 class BkSecrets(object):
     def __init__(self, ssm_client=None, base_path=None):
-        self.ssm_client = ssm_client or self.get_ssm_client()
+        self.ssm_client = boto3.client("ssm") if ssm_client is None else ssm_client
         self.base_path = base_path
         self.store = ssm_parameter_store.SSMParameterStore(prefix=self.base_path, ssm_client=self.ssm_client)
-
-    def get_ssm_client(self):
-        aws_region = shared.config.check_aws_env()
-        return boto3.client('ssm', region_name=aws_region)
 
     def get_secrets(self, slug):
         if slug in self.store.keys() and self.check_acls(slug):
