@@ -19,10 +19,11 @@
 # SOFTWARE.
 # ==============================================================================
 # From: https://gist.github.com/nqbao/9a9c22298a76584249501b74410b8475
+import time
+import datetime
 
 import boto3
 from botocore.exceptions import ClientError
-import datetime
 
 
 class SSMParameterStore(object):
@@ -100,7 +101,15 @@ class SSMParameterStore(object):
             entry.pop('value', None)
         
         if 'value' not in entry:
-            parameter = self._client.get_parameter(Name=abs_key, WithDecryption=True)['Parameter']
+            while True:
+                try:
+                    parameter = self._client.get_parameter(Name=abs_key, WithDecryption=True)['Parameter']
+                    break
+                except ClientError as err:
+                    if err.response["Error"]["Code"] == "ThrottlingException":
+                        time.sleep(1)
+                    else:
+                        raise
             value = parameter['Value']
             if parameter['Type'] == 'StringList':
                 value = value.split(',')
