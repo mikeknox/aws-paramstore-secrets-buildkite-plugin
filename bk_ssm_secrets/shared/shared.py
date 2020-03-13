@@ -1,7 +1,6 @@
 import os
 
 import boto3
-from bk_ssm_secrets.shared import url_parser
 from bk_ssm_secrets.shared import config
 
 def env_is_true(env_var):

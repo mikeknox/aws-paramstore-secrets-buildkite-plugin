@@ -1,6 +1,5 @@
 import os
-
-from bk_ssm_secrets.shared import url_parser
+from urllib.parse import urlparse
 
 
 BASE_PATH = os.environ.get(
@@ -9,9 +8,13 @@ BASE_PATH = os.environ.get(
 DEFAULT_SLUG = os.environ.get(
     "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY", "global"
 )
+# Return an list of the secret types that we can retrieve.
+# This is derived from env var BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES.
+# which is a colon delimited list.
 SECRET_TYPES = os.environ.get(
     "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES", "env:ssh:git-creds"
 ).split(":")
+SECRETS_SLUG = secrets_slug()
 
 
 def base_path():
@@ -23,22 +26,30 @@ def default_slug():
 
 
 def secret_types():
-    """
-    Return an array of the secret types that we can retrieve.
-    This is derived from the env var BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES.
-    This is a colon delimited list.
-    """
     return SECRET_TYPES
 
 
 def secrets_slug():
-    key_value = ""
-    if "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY" in os.environ:
-        key = os.environ["BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY"]
-        key_value = os.environ[key]
-    elif "BUILDKITE_PIPELINE_SLUG" in os.environ:
-        key_value = os.environ["BUILDKITE_PIPELINE_SLUG"]
+    slug = ""
+    primary = "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_KEY"
+    secondary = "BUILDKITE_PIPELINE_SLUG"
+    if primary in os.environ:
+        key = os.environ[primary]
+        slug = os.environ[key]
+    else:
+        slug = os.environ.get(secondary, "")
 
-    if key_value and url_parser.valid_url(key_value):
-        key_value = url_parser.url_to_key(key_value)
-    return key_value
+    if slug == "":
+        msg = f"either {primary} or {secondary} must be set in envvar."
+        raise ValueError(msg)
+
+    parsed = urlparse(slug)
+    if parsed.scheme == "":
+        raise ValueError(f"Invalid URL scheme found: {slug}")
+
+    key = f"{parsed.hostname}"
+    if parsed.port:
+        key += f":{parsed.port}"
+    if parsed.path:
+        key += "_" + parsed.path.strip("/").replace("/", "_").replace("~", "_")
+    return key
