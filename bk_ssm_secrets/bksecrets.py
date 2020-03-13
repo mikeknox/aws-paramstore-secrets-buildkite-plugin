@@ -1,23 +1,23 @@
+import os
 import sys
 import subprocess
-from . import ssm_parameter_store
-# from ssm_parameter_store import EC2ParameterStore
+
 import boto3
-from .. import shared
-# from . import acls
-import os
+from . import config, ssm_parameter_store
+
 
 class BkSecrets(object):
-    def __init__(self, ssm_client=None, base_path=None):
-        self.ssm_client = boto3.client("ssm") if ssm_client is None else ssm_client
-        self.base_path = base_path
-        self.store = ssm_parameter_store.SSMParameterStore(prefix=self.base_path, ssm_client=self.ssm_client)
+    def __init__(self, ssm_client=None, ):
+        self.store = ssm_parameter_store.SSMParameterStore(
+            prefix=config.BASE_PATH,
+            ssm_client=boto3.client("ssm") if ssm_client is None else ssm_client
+        )
 
     def get_secrets(self, slug):
-        if slug in self.store.keys() and self.check_acls(slug):
+        if slug in self.store and self.check_acls(slug):
             keys = self.store[slug].keys()
 
-            allowed_keys = set(keys).intersection(shared.config.secret_types())
+            allowed_keys = set(keys).intersection(config.SECRET_TYPES)
 
             for key in allowed_keys:
                 if key == 'env':
@@ -37,18 +37,18 @@ class BkSecrets(object):
         ssh_key = self.store[slug]['ssh'][key]
 
         if not 'SSH_AGENT_PID' in os.environ:
-            if shared.shared.verbose():
+            if config.VERBOSE:
                 print("Starting an ephemeral ssh-agent", file=sys.stderr)
 
             ssh_agent_process = subprocess.run(['ssh-agent', '-s'], text=True, capture_output=True)
-            shared.shared.extract_ssh_agent_envars(ssh_agent_process.stdout)
-            if shared.shared.verbose():
+            config.extract_ssh_agent_envars(ssh_agent_process.stdout)
+            if config.VERBOSE:
                 print("ssh-agent process return code:", ssh_agent_process.returncode)
                 print("ssh-agent process stdout:", ssh_agent_process.stdout)
                 print("ssh-agent process stderr:", ssh_agent_process.stderr)
 
         if 'SSH_AGENT_PID' in os.environ:
-            if shared.shared.verbose():
+            if config.VERBOSE:
                 print("Loading ssh-key into ssh-agent (pid", os.environ['SSH_AGENT_PID'], ")", file=sys.stderr)
 
             os.environ['SSH_ASKPASS'] = '/bin/false'
@@ -56,27 +56,17 @@ class BkSecrets(object):
                 env=None, input=ssh_key+'\n', text=True, capture_output=True)
             del os.environ['SSH_ASKPASS']
 
-            if shared.shared.verbose():
+            if config.VERBOSE:
                 print("ssh-add process return code:", ssh_add_process.returncode)
                 print("ssh-add process stdout:", ssh_add_process.stdout)
                 print("ssh-add process stderr:", ssh_add_process.stderr)
 
 
     def process_gitcred_secret(self, slug, key):
-        if shared.shared.verbose():
+        if config.VERBOSE:
             print("slug:", slug, "key:", key)
             print("Adding git-credentials in $path as a credential helper", file=sys.stderr)
 
-        # processGitCredentialsSecret() {
-        #   local path="$1"
-        #   git_credentials=()
-        #   echo "Adding git-credentials in $path as a credential helper" >&2;
-        #   git_credentials+=("'credential.helper=$basedir/git-credential-parameterstore-secrets ${path}'")
-        #   if [[ "${#git_credentials[@]}" -gt 0 ]] ; then
-        #     export GIT_CONFIG_PARAMETERS
-        #     GIT_CONFIG_PARAMETERS=$( IFS=' '; echo -n "${git_credentials[*]}" )
-        #   fi
-        # }
 
     def check_pipeline_acl(self, slug=None):
         pipeline_allowed = True

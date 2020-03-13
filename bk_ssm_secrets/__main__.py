@@ -1,29 +1,28 @@
 import os
 
-from .shared import config, shared
-from .bksecrets.bksecrets import BkSecrets
+from . import config
+from .bksecrets import BkSecrets
 
 def main():
-    ssm_base_path = config.base_path()
-    ssm_default_key = config.default_slug()
+    ssm_base_path = config.BASE_PATH
+    secrets_path = [config.DEFAULT_SLUG]
 
-    key_value = config.secrets_slug()
+    bksecret_store = BkSecrets()
+    if config.SECRETS_SLUG:
+        secrets_path.append(config.SECRETS_SLUG)
 
-    secrets_path = [ssm_default_key]
+    if config.VERBOSE:
+        print(f"~~~ Downloading secrets from :aws: paramstore: {config.BASE_PATH}")
 
-    bksecret_store = BkSecrets(base_path=ssm_base_path)
-    if key_value:
-        secrets_path.append(key_value)
-
-    if shared.verbose():
-        print("~~~ Downloading secrets from :aws: paramstore:", ssm_base_path)
-    env_before = os.environ.copy()    # In Python dict assingments are references
+    env_before = os.environ.copy()  # In Python dict assingments are references
 
     for path_node in secrets_path:
-        if shared.verbose():
+        if config.VERBOSE:
             print("Checking paramstore secrets in:", path_node)
         bksecret_store.get_secrets(path_node)
-    shared.dump_env_secrets(env_before)
+
+    config.dump_env_secrets(env_before)
+
 
 if __name__ == '__main__':
     main()
