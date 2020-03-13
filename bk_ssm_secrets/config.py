@@ -1,4 +1,5 @@
 import os
+import logging
 import shlex
 from urllib.parse import urlparse
 
@@ -18,8 +19,23 @@ SECRET_TYPES = os.environ.get(
     "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_TYPES", "env:ssh:git-creds"
 ).split(":")
 MODE = os.environ.get("BUILDKITE_PLUGIN_AWS_PARAMSTORE_MODE", "pipeline")
-VERBOSE = is_true('BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_VERBOSE')
 
+
+def setup_logging():
+    """Logging setup"""
+    logging_kwargs = {
+        "filename": "/tmp/bk-ssm-secrets.log",
+        "format": "[%(asctime)s][%(levelname)s] %(message)s",
+        "datefmt": "%Y-%m-%d %H:%M:%S",
+    }
+    logging.getLogger("boto3").setLevel(logging.WARNING)
+    logging.getLogger("botocore").setLevel(logging.WARNING)
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    if is_true("BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_VERBOSE"):
+        logging.basicConfig(level=logging.DEBUG, **logging_kwargs)
+    else:
+        logging.basicConfig(level=logging.INFO, **logging_kwargs)
 
 def extract_ssh_agent_envars(agent_output):
     '''
@@ -31,8 +47,7 @@ def extract_ssh_agent_envars(agent_output):
     echo Agent pid 24790;
     '''
     agent_env_vars = {}
-    if VERBOSE:
-        print("agent_output:", agent_output)
+    logging.debug(f"agent_output: {agent_output}")
     output = agent_output.replace('\n', '').split(';')
 
     for line in output:

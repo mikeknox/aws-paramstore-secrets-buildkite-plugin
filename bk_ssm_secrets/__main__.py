@@ -1,7 +1,12 @@
 import os
+import logging
 
 from . import config
 from .bksecrets import BkSecrets
+
+
+config.setup_logging()
+
 
 def main():
     ssm_base_path = config.BASE_PATH
@@ -11,14 +16,14 @@ def main():
     if config.SECRETS_SLUG:
         secrets_path.append(config.SECRETS_SLUG)
 
-    if config.VERBOSE:
-        print(f"~~~ Downloading secrets from :aws: paramstore: {config.BASE_PATH}")
+    logging.debug(
+        f"Downloading secrets from paramstore: {config.BASE_PATH}"
+    )
 
     env_before = os.environ.copy()  # In Python dict assingments are references
 
     for path_node in secrets_path:
-        if config.VERBOSE:
-            print("Checking paramstore secrets in:", path_node)
+        logging.debug(f"Checking paramstore secrets in: {path_node}")
         bksecret_store.get_secrets(path_node)
 
     config.dump_env_secrets(env_before)
