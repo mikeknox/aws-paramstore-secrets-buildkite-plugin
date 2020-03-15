@@ -69,9 +69,9 @@ class BkSecrets(object):
             )
             del os.environ['SSH_ASKPASS']
 
-            logging.debug("ssh-add process return code:", ssh_add_process.returncode)
-            logging.debug("ssh-add process stdout:", ssh_add_process.stdout)
-            logging.debug("ssh-add process stderr:", ssh_add_process.stderr)
+            logging.debug(f"ssh-add process return code: {ssh_add_process.returncode}")
+            logging.debug(f"ssh-add process stdout: {ssh_add_process.stdout}")
+            logging.debug(f"ssh-add process stderr: {ssh_add_process.stderr}")
 
     def process_gitcred_secret(self, slug, key):
         # FIXME: not implemented yet
