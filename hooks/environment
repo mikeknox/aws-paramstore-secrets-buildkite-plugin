@@ -16,5 +16,6 @@ envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY=${BUILDKITE_PLU
   /usr/local/bin/bk-ssm-secrets)"
 
 set -o allexport
+# shellcheck disable=SC1090
 source <( echo "$envscript" )
 set +o allexport
