@@ -49,11 +49,17 @@ def dump_env_secrets(env_before):
     logging.debug(f"now: {os.environ}")
     for key in set(os.environ) & set(env_before):
         if os.environ[key] != env_before[key]:
-            export = f"export {key}={shlex.quote(os.environ[key])}"
+            if key == 'SSH_AGENT_PID' or key == 'SSH_AUTH_SOCK':
+                export = f"{key}={shlex.quote(os.environ[key])}"
+            else:
+                export = f"export {key}={shlex.quote(os.environ[key])}"
             logging.debug(f"exporting: {export}")
             print(export)
     for key in set(os.environ) - set(env_before):
-        export = f"export {key}={shlex.quote(os.environ[key])}"
+        if key == 'SSH_AGENT_PID' or key == 'SSH_AUTH_SOCK':
+            export = f"{key}={shlex.quote(os.environ[key])}"
+        else:
+            export = f"export {key}={shlex.quote(os.environ[key])}"
         logging.debug(f"exporting: {export}")
         print(export)
 
