@@ -5,7 +5,7 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(
         name='bk_ssm_secrets',
-        version='0.4.3',
+        version='0.5.0',
         description='BuildKite AWS SSM Paramterstore Secrets plugin',
         author='Michaek Knox',
         author_email='mike@hfnix.net',
