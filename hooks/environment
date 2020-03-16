@@ -4,6 +4,7 @@ set -eu -o pipefail
 
 _source="${BASH_SOURCE[0]}"
 _source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
+pipe="/tmp/$$.stderr"
 
 # shellcheck disable=SC1090
 [ -f "${_source_dir}/custom-defaults" ] && source "${_source_dir}/custom-defaults"
@@ -11,11 +12,24 @@ _source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 [ -z "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY:-}" ] && BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY="global"
 [ -z "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH:-}" ] && BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH="/vendors/buildkite/secrets"
 
+# Prepare a fifo that can get stderr.
+rm -f "$pipe" && mkfifo "$pipe" && exec 3<> $pipe
+
 envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY=${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY} \
   BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH} \
-  /usr/local/bin/bk-ssm-secrets)"
+  /usr/local/bin/bk-ssm-secrets 2>$pipe; echo 'ssm-envscript-quit' > $pipe)"
 
 set -o allexport
 # shellcheck disable=SC1090
 source <( echo "$envscript" )
 set +o allexport
+
+while read -r line < "$pipe"
+do
+    if [ "$line" = "ssm-envscript-quit" ]
+    then
+      rm -f "$pipe"
+      break
+    fi
+    echo "bk-ssm-secrets: $line"
+done

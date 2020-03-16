@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 def setup_logging():
     """Logging setup"""
     logging_kwargs = {
-        "filename": "/tmp/bk-ssm-secrets.log",
+        "filename": f"/tmp/bk-ssm-secrets.{os.getpid()}.log",
         "format": "[%(asctime)s][%(levelname)s] %(message)s",
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
@@ -45,8 +45,6 @@ def extract_ssh_agent_envars(agent_output):
 
 def dump_env_secrets(env_before):
     # Get difference in sets
-    logging.debug(f"before: {env_before}")
-    logging.debug(f"now: {os.environ}")
     for key in set(os.environ) & set(env_before):
         if os.environ[key] != env_before[key]:
             if key == 'SSH_AGENT_PID' or key == 'SSH_AUTH_SOCK':
@@ -70,7 +68,7 @@ def url_to_slug(url):
 
     slug = f"{parsed.hostname}"
     if parsed.port:
-        slug += f":{parsed.port}"
+        slug += f"-{parsed.port}"
     if parsed.path:
         slug += "_" + parsed.path.strip("/").replace("/", "_").replace("~", "_")
     return slug
