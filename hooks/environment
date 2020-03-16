@@ -31,5 +31,5 @@ do
       rm -f "$pipe"
       break
     fi
-    echo "SSH agnet: $line"
+    echo "bk-ssm-secrets: $line"
 done
