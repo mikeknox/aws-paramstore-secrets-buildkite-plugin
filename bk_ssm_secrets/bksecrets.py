@@ -72,6 +72,7 @@ class BkSecrets(object):
                 logging.error(f"ssh-add process stdout: {ssh_add_process.stdout}")
                 logging.error(f"ssh-add process stderr: {ssh_add_process.stderr}")
                 raise RuntimeError("ssh-add failed.")
+            print(f"Added {slug}/{key} to ssh agent.", file=sys.stderr)
         else:
             raise RuntimeError("Starting")
 
