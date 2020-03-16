@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 def setup_logging():
     """Logging setup"""
     logging_kwargs = {
-        "filename": "/tmp/bk-ssm-secrets.log",
+        "filename": f"/tmp/bk-ssm-secrets.{os.getpid()}.log",
         "format": "[%(asctime)s][%(levelname)s] %(message)s",
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
@@ -68,7 +68,7 @@ def url_to_slug(url):
 
     slug = f"{parsed.hostname}"
     if parsed.port:
-        slug += f":{parsed.port}"
+        slug += f"-{parsed.port}"
     if parsed.path:
         slug += "_" + parsed.path.strip("/").replace("/", "_").replace("~", "_")
     return slug
