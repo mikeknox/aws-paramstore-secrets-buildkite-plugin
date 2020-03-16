@@ -45,8 +45,6 @@ def extract_ssh_agent_envars(agent_output):
 
 def dump_env_secrets(env_before):
     # Get difference in sets
-    logging.debug(f"before: {env_before}")
-    logging.debug(f"now: {os.environ}")
     for key in set(os.environ) & set(env_before):
         if os.environ[key] != env_before[key]:
             if key == 'SSH_AGENT_PID' or key == 'SSH_AUTH_SOCK':

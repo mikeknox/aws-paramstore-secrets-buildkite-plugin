@@ -46,32 +46,34 @@ class BkSecrets(object):
             ssh_agent_process = subprocess.run(
                 ['ssh-agent', '-s'], text=True, capture_output=True
             )
-            helpers.extract_ssh_agent_envars(ssh_agent_process.stdout)
-            logging.debug(
-                f"ssh-agent process return code: {ssh_agent_process.returncode}"
-            )
-            logging.debug(
-                f"ssh-agent process stdout: {ssh_agent_process.stdout}"
-            )
-            logging.debug(
-                f"ssh-agent process stderr: {ssh_agent_process.stderr}"
-            )
+            if ssh_agent_process.returncode != 0:
+                logging.debug(
+                    f"ssh-agent process stdout: {ssh_agent_process.stdout}"
+                )
+                logging.debug(
+                    f"ssh-agent process stderr: {ssh_agent_process.stderr}"
+                )
+                raise RuntimeError("starting ssh agent failed.")
+            else:
+                helpers.extract_ssh_agent_envars(ssh_agent_process.stdout)
 
         if 'SSH_AGENT_PID' in os.environ:
             logging.debug(
-                f"Loading ssh-key into agent (pid {os.environ['SSH_AGENT_PID']})"
+                f"Adding ssh-key into agent (pid {os.environ['SSH_AGENT_PID']})"
             )
 
             os.environ['SSH_ASKPASS'] = '/bin/false'
             ssh_add_process = subprocess.run(
-                ['ssh-add', '-'], env=None, input=ssh_key+'\n',
+                ['ssh-add', '-'], input=ssh_key+'\n',
                 text=True, capture_output=True,
             )
             del os.environ['SSH_ASKPASS']
-
-            logging.debug(f"ssh-add process return code: {ssh_add_process.returncode}")
-            logging.debug(f"ssh-add process stdout: {ssh_add_process.stdout}")
-            logging.debug(f"ssh-add process stderr: {ssh_add_process.stderr}")
+            if ssh_add_process.returncode != 0:
+                logging.error(f"ssh-add process stdout: {ssh_add_process.stdout}")
+                logging.error(f"ssh-add process stderr: {ssh_add_process.stderr}")
+                raise RuntimeError("ssh-add failed.")
+        else:
+            raise RuntimeError("Starting")
 
     def process_gitcred_secret(self, slug, key):
         # FIXME: not implemented yet
