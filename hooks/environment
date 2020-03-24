@@ -6,11 +6,35 @@ _source="${BASH_SOURCE[0]}"
 _source_dir="$( cd "$( dirname "${_source}" )" && cd .. && pwd )"
 pipe="/tmp/$$.stderr"
 
+get-ssm () {
+  aws ssm get-parameter --name "$1" --query "Parameter.Value" --with-decryption --output text
+}
+
+get-role () {
+  # Get the IAM role to determine the path we should use
+  detected_role="$(curl -s http://169.254.169.254/latest/meta-data/iam/info | jq '.InstanceProfileArn' | sed -E 's/.*agents-(\w+)-.*/\1/')"
+  case "${detected_role:-}" in
+    cde|infra)
+      echo "$detected_role"
+      ;;
+    *)
+      echo "default"
+      ;;
+  esac
+}
+
 # shellcheck disable=SC1090
 [ -f "${_source_dir}/custom-defaults" ] && source "${_source_dir}/custom-defaults"
 
 [ -z "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY:-}" ] && BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY="global"
 [ -z "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH:-}" ] && BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH="/vendors/buildkite/secrets"
+
+if [ "${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_MODE}" = "repo" ]
+then
+  echo "Adding Buildkite plugins project access key to an SSH agent"
+  eval $(/usr/bin/ssh-agent | sed "/^echo/d")
+  get-ssm "/vendors/buildkite/$(get-role)/global/ssh/bkpl-project" | ssh-add - 2>/dev/null
+fi
 
 # Prepare a fifo that can get stderr.
 rm -f "$pipe" && mkfifo "$pipe" && exec 3<> $pipe

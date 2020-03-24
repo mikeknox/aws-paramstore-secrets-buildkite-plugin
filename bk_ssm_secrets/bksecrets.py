@@ -40,41 +40,53 @@ class BkSecrets(object):
     def process_ssh_secret(self, slug, key):
         ssh_key = self.store[slug]['ssh'][key]
 
-        if not 'SSH_AGENT_PID' in os.environ:
-            logging.debug("Starting an ephemeral ssh-agent")
+        # Need to check whether another SSH agent with the same key exists.
+        default_key = os.environ[
+            'BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY'
+        ]
+        secrets_mode = os.environ["BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_MODE"]
+        if slug == default_key and secrets_mode == "pipeline":
+            logging.debug("Skip adding global ssh key again.")
+            return
 
-            ssh_agent_process = subprocess.run(
-                ['ssh-agent', '-s'], text=True, capture_output=True
-            )
-            if ssh_agent_process.returncode != 0:
-                logging.debug(
-                    f"ssh-agent process stdout: {ssh_agent_process.stdout}"
-                )
-                logging.debug(
-                    f"ssh-agent process stderr: {ssh_agent_process.stderr}"
-                )
-                raise RuntimeError("starting ssh agent failed.")
-            else:
-                helpers.extract_ssh_agent_envars(ssh_agent_process.stdout)
+        logging.debug("Starting an ephemeral ssh-agent")
 
-        if 'SSH_AGENT_PID' in os.environ:
-            logging.debug(
-                f"Adding ssh-key into agent (pid {os.environ['SSH_AGENT_PID']})"
-            )
+        ssh_agent = subprocess.run(
+            ['ssh-agent', '-s'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if ssh_agent.returncode != 0:
+            logging.debug(f"ssh-agent process stdout: {ssh_agent.stdout}")
+            logging.debug(f"ssh-agent process stderr: {ssh_agent.stderr}")
+            raise RuntimeError("starting ssh agent failed.")
 
-            os.environ['SSH_ASKPASS'] = '/bin/false'
-            ssh_add_process = subprocess.run(
-                ['ssh-add', '-'], input=ssh_key+'\n',
-                text=True, capture_output=True,
-            )
-            del os.environ['SSH_ASKPASS']
-            if ssh_add_process.returncode != 0:
-                logging.error(f"ssh-add process stdout: {ssh_add_process.stdout}")
-                logging.error(f"ssh-add process stderr: {ssh_add_process.stderr}")
-                raise RuntimeError("ssh-add failed.")
-            print(f"Added {slug}/{key} to ssh agent.", file=sys.stderr)
+        ssh_env = helpers.extract_ssh_agent_envars(ssh_agent.stdout)
+
+        logging.debug(
+            f"Started new ssh-agent (pid {ssh_env['SSH_AGENT_PID']})"
+        )
+
+        envvars = os.environ.copy()
+        envvars.update(ssh_env)
+        envvars['SSH_ASKPASS'] = '/bin/false'
+        ssh_add = subprocess.run(
+            ['ssh-add', '-'], input=ssh_key+'\n', env=envvars,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8',
+        )
+
+        if ssh_add.returncode != 0:
+            logging.error(f"ssh-add process stdout: {ssh_add.stdout.decode()}")
+            logging.error(f"ssh-add process stderr: {ssh_add.stderr.decode()}")
+            raise RuntimeError("ssh-add failed.")
+        print(f"Added {slug}/{key} to ssh agent .", file=sys.stderr)
+
+        if key == "repo":
+            prefix = "BK_SSM_SSH_AGENT_REPO"
         else:
-            raise RuntimeError("Starting")
+            prefix = "BK_SSM_SSH_AGENT_PROJECT"
+
+        os.environ[f"{prefix}_AGENT_PID"] = envvars["SSH_AGENT_PID"]
+        os.environ[f"{prefix}_AUTH_SOCK"] = envvars["SSH_AUTH_SOCK"]
+
 
     def process_gitcred_secret(self, slug, key):
         # FIXME: not implemented yet
