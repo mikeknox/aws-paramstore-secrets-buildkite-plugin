@@ -30,18 +30,17 @@ def extract_ssh_agent_envars(agent_output):
     SSH_AUTH_SOCK=/tmp/ssh-KgoPdeGP2LPZ/agent.24789; export SSH_AUTH_SOCK;
     SSH_AGENT_PID=24790; export SSH_AGENT_PID;
     echo Agent pid 24790;
+
+    return a dict that looks like:
+
+    {
+        'SSH_AUTH_SOCK': '/tmp/ssh-KgoPdeGP2LPZ/agent.24789',
+        'SSH_AGENT_PID': '24790'
+    }
     '''
-    agent_env_vars = {}
-    logging.debug(f"agent_output: {agent_output}")
-    output = agent_output.replace('\n', '').split(';')
+    pairs = [line.split(";")[0] for line in agent_output.decode().splitlines()[:2]]
+    return {pair.split("=")[0]: pair.split("=")[1] for pair in pairs}
 
-    for line in output:
-        key_val_pair = line.split('=')
-        if len(key_val_pair) == 2:
-            agent_env_vars[key_val_pair[0]] = key_val_pair[1]
-            os.environ[key_val_pair[0]]  = key_val_pair[1]
-
-    return agent_env_vars
 
 def dump_env_secrets(env_before):
     # Get difference in sets
