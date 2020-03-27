@@ -94,37 +94,25 @@ class BkSecrets(object):
         logging.debug("Adding git-credentials in $path as a credential helper", file=sys.stderr)
 
     def check_pipeline_acl(self, slug=None):
-        pipeline_allowed = True
-        if slug in self.store.keys() and 'allowed_pipelines' in self.store[slug].keys():
-            # if os.environ['BUILDKITE_PIPELINE_SLUG'] is in list allow
-            pipeline_allowed = False
-            if 'BUILDKITE_PIPELINE_SLUG' in os.environ and os.environ['BUILDKITE_PIPELINE_SLUG'] in self.store[slug]['allowed_pipelines'].split('\n'):
-                pipeline_allowed = True
-
-        return pipeline_allowed
+        if slug in self.store and 'allowed_pipelines' in self.store[slug]:
+            current_slug = os.environ['BUILDKITE_PIPELINE_SLUG']
+            allowed = self.store[slug]['allowed_pipelines'].split('\n')
+            if current_slug not in allowed:
+                raise RuntimeError(
+                    "Your pipeline does not have access to this value."
+                )
 
     def check_team_allowed(self, slug=None):
-        team_allowed = True # Allow access if ACL's are not set
-
-        if slug in self.store.keys() and 'allowed_teams' in self.store[slug].keys():
-            # Compare os.environ['BUILDKITE_TEAMS'] (colon delimited list) with team_list
-            # if there is a common value, return true
-            team_allowed = False
-
-            # TODO:validate envVar
-            if 'BUILDKITE_BUILD_CREATOR_TEAMS' in os.environ:
-                current_teams = os.environ['BUILDKITE_BUILD_CREATOR_TEAMS'].split(':')
-
-                if self.store[slug]['allowed_teams']:
-                    allowed_teams = self.store[slug]['allowed_teams'].split('\n')
-                    common_teams = set(allowed_teams).intersection(current_teams)
-                    if len(common_teams) >= 1:
-                        team_allowed = True
-
-        return team_allowed
+        if slug in self.store and 'allowed_teams' in self.store[slug]:
+            current_teams = os.environ.get(
+                "BUILDKITE_BUILD_CREATOR_TEAMS", ""
+            ).split(":")
+            allowed_teams = self.store[slug]['allowed_teams'].split('\n')
+            if not (set(current_teams) & set(allowed_teams)):
+                raise RuntimeError(
+                    "Your pipeline does not have access to this value."
+                )
 
     def check_acls(self, slug=None):
-        pipeline_allowed = self.check_pipeline_acl(slug)
-        team_allowed = self.check_team_allowed(slug)
-
-        return pipeline_allowed and team_allowed
+        self.check_pipeline_acl(slug)
+        self.check_team_allowed(slug)
