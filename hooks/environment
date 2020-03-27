@@ -41,7 +41,7 @@ rm -f "$pipe" && mkfifo "$pipe" && exec 3<> $pipe
 
 envscript="$(BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY=${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DEFAULT_KEY} \
   BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH} \
-  /usr/local/bin/bk-ssm-secrets 2>$pipe; echo 'ssm-envscript-quit' > $pipe)"
+  /usr/local/bin/bk-ssm-secrets 2>$pipe || exit 1; echo 'ssm-envscript-quit' > $pipe)"
 
 set -o allexport
 # shellcheck disable=SC1090
