@@ -18,7 +18,8 @@ class BkSecrets(object):
 
     def get_secrets(self, slug):
         logging.debug(f"In get_secrets: {slug}")
-        if slug in self.store and self.check_acls(slug):
+        if slug in self.store:
+            self.check_acls(slug)
             keys = self.store[slug].keys()
 
             allowed_types = set(keys) & set(config.SECRET_TYPES)
@@ -98,6 +99,7 @@ class BkSecrets(object):
             current_slug = os.environ['BUILDKITE_PIPELINE_SLUG']
             allowed = self.store[slug]['allowed_pipelines'].split('\n')
             if current_slug not in allowed:
+                logging.debug(f"current: {current_slug}. allowed:, {allowed}")
                 raise RuntimeError(
                     "Your pipeline does not have access to this value."
                 )
@@ -109,6 +111,7 @@ class BkSecrets(object):
             ).split(":")
             allowed_teams = self.store[slug]['allowed_teams'].split('\n')
             if not (set(current_teams) & set(allowed_teams)):
+                logging.debug(f"current: {current_teams}. allowed:, {allowed_teams}")
                 raise RuntimeError(
                     "Your pipeline does not have access to this value."
                 )
