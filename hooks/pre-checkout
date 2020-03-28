@@ -9,17 +9,17 @@ try-ssh () {
   echo "$success"
 }
 
-repo_works=$(try-ssh "${BK_SSM_SSH_AGENT_REPO_AUTH_SOCK}" "${BK_SSM_SSH_AGENT_REPO_AGENT_PID}")
+repo_works=$(try-ssh "${AWS_PARAMSTORE_SECRETS_REPO_AUTH_SOCK}" "${AWS_PARAMSTORE_SECRETS_REPO_AGENT_PID}")
 if [ "$repo_works" = "true" ]
 then
-  export SSH_AUTH_SOCK="${BK_SSM_SSH_AGENT_REPO_AUTH_SOCK}"
-  export SSH_AGENT_PID="${BK_SSM_SSH_AGENT_REPO_AGENT_PID}"
+  export SSH_AUTH_SOCK="${AWS_PARAMSTORE_SECRETS_REPO_AUTH_SOCK}"
+  export SSH_AGENT_PID="${AWS_PARAMSTORE_SECRETS_REPO_AGENT_PID}"
 else
-  project_works=$(try-ssh "${BK_SSM_SSH_AGENT_PROJECT_AUTH_SOCK}" "${BK_SSM_SSH_AGENT_PROJECT_AGENT_PID}")
+  project_works=$(try-ssh "${AWS_PARAMSTORE_SECRETS_PROJECT_AUTH_SOCK}" "${AWS_PARAMSTORE_SECRETS_PROJECT_AGENT_PID}")
   if [ "$project_works" = "true" ]
   then
-    export SSH_AUTH_SOCK="${BK_SSM_SSH_AGENT_PROJECT_AUTH_SOCK}"
-    export SSH_AGENT_PID="${BK_SSM_SSH_AGENT_PROJECT_AGENT_PID}"
+    export SSH_AUTH_SOCK="${AWS_PARAMSTORE_SECRETS_PROJECT_AUTH_SOCK}"
+    export SSH_AGENT_PID="${AWS_PARAMSTORE_SECRETS_PROJECT_AGENT_PID}"
   else
     >&2 echo "No ssh agent works. Using the default one"
   fi
