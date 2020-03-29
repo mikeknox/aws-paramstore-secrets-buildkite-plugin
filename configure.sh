@@ -29,6 +29,10 @@ then
   # clean up
   for name in $(export | grep "AWS_PARAMSTORE_SECRETS_" | sed "s/=/ /g" | awk '{print $3}')
   do
+    if [ $name = "AWS_PARAMSTORE_SECRETS_AUTH_SOCK" ] || [ $name = "AWS_PARAMSTORE_SECRETS_AGENT_PID" ]
+    then
+      continue
+    fi
     unset $name
   done
 fi

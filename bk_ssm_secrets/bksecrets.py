@@ -29,11 +29,13 @@ class BkSecrets(object):
 
     def parse_ssh(self):
         if self.slug == os.environ["BUILDKITE_PIPELINE_SLUG"]:
-            logging.debug("Ignore pipeline level ssh keys.")
+            if 'ssh' in self.store:
+                logging.warn("Ignore pipeline level ssh keys.")
             return
 
         if self.slug == config.DEFAULT_SLUG:
-            logging.debug("Ignore default ssh keys.")
+            if 'ssh' in self.store:
+                logging.warn("Ignore default ssh keys.")
             return
 
         self.check_acls()
@@ -60,7 +62,7 @@ class BkSecrets(object):
             allowed = self.store['allowed_pipelines'].split('\n')
             if current_pipeline not in allowed:
                 logging.error(
-                    f"current pipeline: {current_pipeline}. allowed:, {allowed}"
+                    f"current pipeline: {current_pipeline}. allowed: {allowed}"
                 )
                 raise RuntimeError(
                     "Your pipeline does not have access to this namespace."
@@ -76,7 +78,7 @@ class BkSecrets(object):
             allowed_teams = self.store['allowed_teams'].split('\n')
             if len(set(current_teams) & set(allowed_teams)) == 0:
                 logging.error(
-                    f"current teams: {current_teams}. allowed:, {allowed_teams}"
+                    f"current teams: {current_teams}. allowed: {allowed_teams}"
                 )
                 raise RuntimeError(
                     "Your team does not have access to this namespace."

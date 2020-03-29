@@ -18,13 +18,14 @@ then
   get-ssm "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" | ssh-add - 2>/dev/null
 fi
 
-exports=$(/usr/local/bin/bk-ssm-secrets || exit 1)
+exports=$(/usr/local/bin/bk-ssm-secrets)
 
-echo "$exports" | grep -v "^export\ "
+echo "$exports" | grep -v "^export " || true
 
 set -o allexport
 # shellcheck disable=SC1090
-source <( echo "$exports" | grep "^export\ " )
+source <( echo "$exports" | grep "^export " || true)
 set +o allexport
 
 unset -f get-ssm
+unset -v exports
