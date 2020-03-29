@@ -16,6 +16,8 @@ class BkSecrets(object):
 
     def parse_env(self):
         self.check_acls()
+        if 'env' not in self.store:
+            return
         for key in self.store['env']:
             value = self.store['env'][key]
             key_name = helpers.key_to_env_name(key)
@@ -36,15 +38,14 @@ class BkSecrets(object):
 
         self.check_acls()
         logging.debug(f"Looking for ssh key: `{self.base}/ssh/key`.")
-        ssh_key = self.store.get('ssh', {}).get('key')
-        if ssh_key is None:
+        if 'ssh' not in self.store or 'key' not in self.store['ssh']:
             logging.debug(f"No ssh key defined for {self.base}.")
             return
 
         logging.debug(
             f"Starting an ephemeral ssh-agent for `{self.base}/ssh/key`"
         )
-        envvars = helpers.start_ssh_agent(ssh_key)
+        envvars = helpers.start_ssh_agent(self.store['ssh']['key'])
         print(f"Added key `{self.base}/ssh/key` to ssh agent.")
 
         os.environ.update({

@@ -7,3 +7,4 @@ BASE_PATH = os.environ.get(
 DEFAULT_SLUG = os.environ.get(
     "AWS_PARAMSTORE_SECRETS_DEFAULT_KEY", "global"
 )
+VERBOSE = os.environ.get("AWS_PARAMSTORE_SECRETS_VERBOSE") == "1"

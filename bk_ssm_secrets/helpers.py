@@ -4,6 +4,8 @@ import shlex
 import subprocess
 from urllib.parse import urlparse
 
+from . import config
+
 
 def setup_logging():
     """Logging setup"""
@@ -17,8 +19,7 @@ def setup_logging():
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-    verbose_key = "BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_VERBOSE"
-    if os.environ.get(verbose_key, "").lower() in ["1", "true"]:
+    if config.VERBOSE:
         logging.basicConfig(level=logging.DEBUG, **logging_kwargs)
     else:
         logging.basicConfig(level=logging.INFO, **logging_kwargs)
@@ -55,9 +56,9 @@ def dump_env_secrets(env_before):
         changed_value = key in env_before and os.environ[key] != env_before[key]
 
         if changed_value or key not in env_before:
-            logging.debug(f"exporting: {export}")
             export = f"export {key}={shlex.quote(os.environ[key])}"
-        print(export)
+            logging.debug(f"exporting: {export}")
+            print(export)
 
 def url_to_slug(url):
     parsed = urlparse(url)
