@@ -4,21 +4,23 @@ __This plugin was originally inspired and based on the the *AWS S3 Secrets Build
 
 It currently runs on an AWS based Buildkite stack, but it should work on any agent.
 
-Expose secrets to your build steps. AWS Paramaterstore parameters (Secure and clear) are made available to pipeilines.
+Expose secrets to your build steps. AWS Paramaterstore parameters (Secure and clear) are made available to pipelines.
 
 Different types of secrets are supported and exposed to your builds in appropriate ways:
 
-- `ssh-agent` for SSH Private Keys
-- Environment Variables for strings
+- `ssh` for SSH Private Keys(Deploy keys)
+- `env` Environment Variables
 - `git-credential` via git's credential.helper
 
 Secrets (and in the clear) are exposed from a toplevel path (`BASE_PATH`):
 
-- `<BASE_PATH>/<pipeline slug>/env/<env name>`
-- `<BASE_PATH>/<pipeline slug>/ssh-agent/<key name>`
-- `<BASE_PATH>/<pipeline slug>/git-credential/<cred name>`
+- `<BASE_PATH>/<slug>/env/<env name>`
+- `<BASE_PATH>/<slug>/ssh/key`
+- `<BASE_PATH>/<slug>/git-credential/<cred name>`
 
-The core functionality has been rewritten in Python as it provided incredibly difficult to parse repo URLs in a sane way.
+Where the `<slug>` could either be the pipeline slug or a calculated repo slug.
+
+The core functionality is written in Python, as it is much easier to manipulate strings/urls in Python.
 
 ## Note
 
@@ -28,18 +30,9 @@ There is a virtual slug called `<global_defaults>`, which are downloaded for all
 
 ## Example
 
-The following pipeline downloads a private key from `{ssm_store_path}/{pipeline}/ssh_private_key` and set of environment variables from `{ssm_store_path}/{pipeline}/environment`.
-ssm_store_path - `/vendors/buildkite/secrets/` - provided as parameter
+Save a git deploy key either to `{ssm_store_path}/{pipeline}/ssh/key` or preferably to `{ssm_store_path}/{repo}/ssh/key` to allow any Buildkite pipeline to check out this repo.
 
-The private key is exposed to both the checkout and the command as an ssh-agent instance. The secrets in the env file are exposed as environment variables.
-
-```yml
-steps:
-  - command: ./run_build.sh
-    plugins:
-      - mikeknox/aws-paramstore-secrets#v0.1.:
-          path: /base_path
-```
+Save a build time secrets(`SOME_TOKEN`) to `{ssm_store_path}/{pipeline}/env/SOME_TOKEN`, and it shall be available in build time.
 
 ## IAM permissions
 
@@ -68,7 +61,7 @@ The agent needs to have the following permissions in IAM to access the secrets:
 
 ## Access Controls
 
-A limited form of A.CL has been added to this plugin, each `<slug>` can contain:
+A limited form of ACL has been added to this plugin, each `<slug>` can contain:
 
 - `allowed_teams`   - A list of teams that can access the secrets at this node
 - `allowed_pipelines`   - A list of pipelines that can access the teams at this node
@@ -77,7 +70,7 @@ If either of these params exist at a node, then access is denied unless the curr
 
 ### ACL Note
 
-Don't let this lul you into a false sense of security; as your agent has access to the Parameter Store tree with the secrets, any pipeline could bypass the plugin and access the secrets directly.
+Don't let this lure you into a false sense of security; as your agent has access to the Parameter Store tree with the secrets, any pipeline could bypass the plugin and access the secrets directly.
 
 ## Uploading Secrets
 
@@ -109,27 +102,17 @@ These are then exposed via a [gitcredential helper](https://git-scm.com/docs/git
 
 ### `path`
 
-defaults to: `/vendors/buildkite/secrets`
+defaults to: `/vendors/buildkite`
 This is expected to be a path in Parameterstore where we should look for secrets.
 It is expected that your BuildKite agent will have permissions to read all items in this path, and decrypt any secrets there.
 
 Alternative Base Path to use for secrets
-
-### `secrets_key`
-
-defaults to: `BUILDKITE_PIPELINE_SLUG`
-
-Can be set to any valid environment variable, sych as `BUILDKITE_REPO`
 
 ### `default_key`
 
 defaults to: `global`
 
 A slug for default secrets that are always loaded.
-
-### `tyes`
-
-Colon delimiited list of secret types to load
 
 ## Testing
 
