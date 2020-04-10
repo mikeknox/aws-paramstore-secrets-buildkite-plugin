@@ -19,11 +19,17 @@
 # SOFTWARE.
 # ==============================================================================
 # From: https://gist.github.com/nqbao/9a9c22298a76584249501b74410b8475
-import time
 import datetime
+import logging
+import time
 
 import boto3
 from botocore.exceptions import ClientError
+
+from . import helpers
+
+
+helpers.setup_logging()
 
 
 class SSMParameterStore(object):
@@ -62,17 +68,30 @@ class SSMParameterStore(object):
         self._keys = {}
         self._substores = {}
 
-        paginator = self._client.get_paginator('describe_parameters')
-        pager = paginator.paginate(
-            ParameterFilters=[
-                dict(Key="Path", Option="Recursive", Values=[self._prefix])
+        kwargs = {
+            "ParameterFilters": [
+                {"Key": "Path", "Option": "Recursive", "Values": [self._prefix]}
             ]
-        )
+        }
+        parameters = []
+        while True:
+            try:
+                response = self._client.describe_parameters(**kwargs)
+                parameters += response["Parameters"]
+                if "NextToken" not in response:
+                    break
+                else:
+                    kwargs["NextToken"] = response["NextToken"]
+            except ClientError as err:
+                logging.warn("Get ThrottlingException in describe-parameter.")
+                if err.response["Error"]["Code"] == "ThrottlingException":
+                    time.sleep(1)
+                else:
+                    raise
 
-        for page in pager:
-            for p in page['Parameters']:
-                paths = p['Name'][len(self._prefix):].split('/')
-                self._update_keys(self._keys, paths)
+        for p in parameters:
+            paths = p['Name'][len(self._prefix):].split('/')
+            self._update_keys(self._keys, paths)
 
     @classmethod
     def _update_keys(cls, keys, paths):
@@ -108,6 +127,7 @@ class SSMParameterStore(object):
                     parameter = self._client.get_parameter(Name=abs_key, WithDecryption=True)['Parameter']
                     break
                 except ClientError as err:
+                    logging.warn("Get ThrottlingException in get-parameter.")
                     if err.response["Error"]["Code"] == "ThrottlingException":
                         time.sleep(1)
                     else:
