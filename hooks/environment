@@ -20,11 +20,9 @@ fi
 
 exports=$(/usr/local/bin/bk-ssm-secrets)
 
-echo "$exports" | grep -v "^export " || true
-
 set -o allexport
 # shellcheck disable=SC1090
-source <( echo "$exports" | grep "^export " || true)
+source <( echo "$exports" )
 set +o allexport
 
 unset -f get-ssm

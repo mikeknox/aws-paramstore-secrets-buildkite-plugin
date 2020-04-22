@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 
 from . import config, helpers, ssm_parameter_store
 
@@ -48,7 +49,7 @@ class BkSecrets(object):
             f"Starting an ephemeral ssh-agent for `{self.base}/ssh/key`"
         )
         envvars = helpers.start_ssh_agent(self.store['ssh']['key'])
-        print(f"Added key `{self.base}/ssh/key` to ssh agent.")
+        print(f"Added key `{self.base}/ssh/key` to ssh agent.", file=sys.stderr)
 
         os.environ.update({
             "AWS_PARAMSTORE_SECRETS_AGENT_PID": envvars["SSH_AGENT_PID"],
