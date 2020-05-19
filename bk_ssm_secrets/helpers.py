@@ -61,10 +61,10 @@ def dump_env_secrets(env_before):
             print(export)
 
 def url_to_slug(url):
+    if not ("://" in url):
+      url = f"ssh://{url.replace(':', '/')}"
+      
     parsed = urlparse(url)
-    if parsed.scheme == "":
-        raise ValueError(f"Invalid URL scheme found: {url}")
-
     slug = f"{parsed.hostname}"
     if parsed.port:
         slug += f"-{parsed.port}"
