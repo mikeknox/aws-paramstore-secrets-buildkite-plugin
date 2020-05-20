@@ -61,14 +61,12 @@ def dump_env_secrets(env_before):
             print(export)
 
 def url_to_slug(url):
-    parsed = urlparse(url)
-
-    slug = f"{parsed.hostname}"
-    if parsed.port:
-        slug += f"-{parsed.port}"
-    if parsed.path:
-        slug += "_" + parsed.path.strip("/").replace("/", "_").replace("~", "_")
-    return slug
+    groups = re.match(r'.*(?:@|//)([\w.]*):?([\d]*)?/?(.*)', url).groups()
+    return '{}{}{}'.format(
+        groups[0],
+        ('-' + groups[1]) if groups[1] else '',
+        '_' + groups[2].replace('/', '_').replace('~', '_')
+    )
 
 def key_to_env_name(key_name):
     return key_name.upper().replace("-", "_")
