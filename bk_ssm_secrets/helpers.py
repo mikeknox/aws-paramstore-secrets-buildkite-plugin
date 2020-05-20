@@ -65,7 +65,7 @@ def url_to_slug(url):
     return '{}{}{}'.format(
         groups[0],
         ('-' + groups[1]) if groups[1] else '',
-        '_' + groups[2].replace('/', '_')
+        '_' + groups[2].replace('/', '_').replace('~', '_')
     )
 
 def key_to_env_name(key_name):
