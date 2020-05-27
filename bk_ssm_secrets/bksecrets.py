@@ -73,11 +73,17 @@ class BkSecrets(object):
     def check_team_allowed(self):
         if 'allowed_teams' in self.store:
             logging.debug(f"Reading allowed teams")
-            current_teams = os.environ.get(
-                "BUILDKITE_BUILD_CREATOR_TEAMS", ""
-            ).split(":")
+            current_teams = os.environ.get("BUILDKITE_BUILD_CREATOR_TEAMS", "" ).split(":")
+            current_teams |= set( ( os.environ.get("BUILDKITE_UNBLOCKER_TEAMS", "" ).split(":") )
             allowed_teams = self.store['allowed_teams'].split('\n')
-            if len(set(current_teams) & set(allowed_teams)) == 0:
+            if len(current_teams) == 0 and os.environ.get("BUILDKITE_SOURCE", "") != 'schedule':
+                logging.error(
+                    f"No teams are defined, and this is not a scheduled build."
+                )
+                raise RuntimeError(
+                    "Your build does not have access to this namespace."
+                )
+            elif len(set(current_teams) & set(allowed_teams)) == 0:
                 logging.error(
                     f"current teams: {current_teams}. allowed: {allowed_teams}"
                 )

@@ -68,6 +68,12 @@ A limited form of ACL has been added to this plugin, each `<slug>` can contain:
 
 If either of these params exist at a node, then access is denied unless the current team and/or pipeline is listed.
 
+### Determining teams
+
+The plugin assesses team memberhsip based on data supplied in `BUILDKITE_BUILD_CREATOR_TEAMS` and `BUILDKITE_UNBLOCKER_TEAMS` environment variables.
+:warning: If both of those variables are empty, *and* `BUILDKITE_SOURCE == "schedule"` then `allwoed_teams` is deemed true.
+The assumption is that the scheduled build was created by an approved individiual, as creating a Scheduled Build in BuildKite requires 'Full Access' to the pipeline.
+
 ### ACL Note
 
 Don't let this lure you into a false sense of security; as your agent has access to the Parameter Store tree with the secrets, any pipeline could bypass the plugin and access the secrets directly.
