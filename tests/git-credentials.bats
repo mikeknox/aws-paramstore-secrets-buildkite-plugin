@@ -12,6 +12,7 @@ load '/usr/local/lib/bats/load.bash'
 # [schema://][user[:password]@]host[:port][/path][?[arg1=val1]...][#fragment]
 
 @test "Get basic git-credentials from parameterstore" {
+  skip "git-credentials is not support yet"
   export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=/base_path
   export BUILDKITE_PIPELINE_SLUG=testpipe
   export GIT_CONFIG_PARAMETERS="'credential.helper=basedir/git-credential-parameterstore-secrets ${BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH}/git-creds/foobar'"
@@ -39,6 +40,7 @@ load '/usr/local/lib/bats/load.bash'
 }
 
 @test "Get git-credentials with args from parameterstore" {
+  skip "git-credentials is not support yet"
   export AWS_DEFAULT_REGION=eu-boohar-99
   export BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_PATH=/base_path
   export BUILDKITE_PIPELINE_SLUG=testpipe
