@@ -19,7 +19,8 @@ services:
       - ".:/plugin"
 
   pytests:
-    image: python:3.7-alpine
+    build:
+      context: .
     command: python3 -m unittest
     working_dir: /plugin
     volumes:

@@ -73,14 +73,11 @@ class BkSecrets(object):
     def check_team_allowed(self):
         if 'allowed_teams' in self.store:
             logging.debug("Reading allowed teams")
-            get_team = lambda env: set(os.environ.get(env, "").split(":"))
-            current_teams = get_team("BUILDKITE_BUILD_CREATOR_TEAMS") | \
-                get_team("BUILDKITE_UNBLOCKER_TEAMS")
-
+            current_teams = helpers.get_buildkite_teams()
             allowed_teams = set(self.store['allowed_teams'].split('\n'))
             is_scheduled = os.environ.get("BUILDKITE_SOURCE", "") == 'schedule'
 
-            if current_teams == set([""]) and not is_scheduled:
+            if current_teams == set() and not is_scheduled:
                 logging.error(
                     f"No teams are defined, and this is not a scheduled build."
                 )
