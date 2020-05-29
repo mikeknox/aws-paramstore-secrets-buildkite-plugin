@@ -1,24 +1,36 @@
-# import pytest, os
-import unittest
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest import TestCase, mock
 import os
-from . import bksecrets
-import boto3
-from botocore.stub import Stubber
+from ..bksecrets import BkSecrets
+from ..ssm_parameter_store import SSMParameterStore
 
-class TestAclMethods(unittest.TestCase):
-    def test_check_pipeline_acl(self):
-        print("acls")
-        client = boto3.client('ssm', region_name='ap-southwest-2')
-        stubber = Stubber(client)
-        # stub.add_response(...)
-        # store = ssm_parameter_store.SSMParameterStore(prefix='/path', ssm_client=stubber)
-        secrets = bksecrets.BkSecrets(ssm_client=stubber, base_path='/path')
-        # with patch.dict(os.environ, {'BUILDKITE_PIPELINE_SLUG': 'zip'}, clear=True):
-        #     assert(secrets.check_pipeline_acl() == 'zip')
-        
-        assert(secrets.check_pipeline_acl() == True)
+class TestAclMethods(TestCase):
+    def test_check_team_allowed(self):
+      get_buildkite_teams = lambda: {'team1', 'team2'}
+      with mock.patch.object(SSMParameterStore, '__init__', return_value=None):
+        secrets = BkSecrets('/path')
+        with mock.patch.object(SSMParameterStore, '__contains__', return_value='allowed_pipelines'):
+          with mock.patch.dict(os.environ, {
+              'BUILDKITE_PIPELINE_SLUG': 'zip',
+              'BUILDKITE_SOURCE': 'api'
+            }, clear=True):
+            # get_buildkite_teams = MagicMock(return_value=get_teams)
+            with mock.patch.object(SSMParameterStore, 'get', return_value='no_team'):
+              with self.assertRaises(RuntimeError):
+                secrets.check_team_allowed()
+
+      get_buildkite_teams = lambda: {}
+      # No teams set
+      # scheduler set
+      with mock.patch.object(SSMParameterStore, '__init__', return_value=None):
+        secrets = BkSecrets('/path')
+        with mock.patch.object(SSMParameterStore, '__contains__', return_value='allowed_pipelines'):
+          with mock.patch.dict(os.environ, {
+              'BUILDKITE_PIPELINE_SLUG': 'zip',
+              'BUILDKITE_SOURCE': 'schedule'
+            }, clear=True):
+            # get_buildkite_teams = MagicMock(return_value=get_teams)
+            with mock.patch.object(SSMParameterStore, 'get', return_value='no_team'):
+              assert(secrets.check_team_allowed() == None)
 
 if __name__ == '__main__':
     unittest.main()
