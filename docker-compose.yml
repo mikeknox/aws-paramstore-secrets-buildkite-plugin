@@ -5,12 +5,6 @@ services:
     volumes:
       - .:/plugin
 
-  lint:
-    image: buildkite/plugin-linter
-    command: ['--id', 'mikeknox/aws-paramstore-secrets']
-    volumes:
-      - ".:/plugin"
-
   shellcheck:
     image: koalaman/shellcheck:latest
     command: -x lib/bats-helper.bash hooks/environment hooks/post-checkout hooks/pre-checkout hooks/pre-exit configure.sh

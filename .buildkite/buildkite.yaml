@@ -6,22 +6,18 @@ steps:
           - hooks/**
           - lib/**
           - git-credential-parameterstore-secrets
-
-  - label: ":sparkles: Lint"
-    plugins:
-      plugin-linter#v2.0.0:
-        id: ssh://git@scm.tools.assemblypayments.com:7999/bkpl/ecs-task-buildkite-plugin.git
+          - *.sh
 
   - label: ":suitest: unit test"
     plugins:
-      docker-compose#v3.2.0:
+      docker-compose#v3.3.0:
         run: tests
         config:
           - docker-compose.yml
 
   - label: ":suitest: python unit tests"
     plugins:
-      docker-compose#v3.2.0:
+      docker-compose#v3.3.0:
         run: pytests
         config:
           - docker-compose.yml
