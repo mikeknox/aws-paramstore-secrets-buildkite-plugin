@@ -14,6 +14,7 @@ get-ssm () {
 if [ -n "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" ]
 then
   echo "Adding Global SSH deploy key to a default SSH agent"
+  # shellcheck disable=SC2046
   eval $(/usr/bin/ssh-agent | sed "/^echo/d")
   get-ssm "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" | ssh-add - 2>/dev/null
 fi

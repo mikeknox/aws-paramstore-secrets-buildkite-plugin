@@ -13,7 +13,7 @@ services:
 
   shellcheck:
     image: koalaman/shellcheck:latest
-    command: -x lib/shared.bash hooks/environment hooks/pre-exit
+    command: -x lib/bats-helper.bash hooks/environment hooks/post-checkout hooks/pre-checkout hooks/pre-exit configure.sh
     working_dir: /plugin
     volumes:
       - ".:/plugin"
