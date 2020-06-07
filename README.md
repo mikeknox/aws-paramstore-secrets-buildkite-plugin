@@ -1,65 +1,94 @@
-# AWS Parameterstore Secrets Buildkite Plugins
+# Elastic CI Stack SSM secrets hooks
 
-__This plugin was originally inspired and based on the the *AWS S3 Secrets Buildkite Plugin*__
+__This project was heavily inspired by [Elastic CI stack S3 secreets hook](https://github.com/buildkite/elastic-ci-stack-s3-secrets-hooks)__
 
-It currently runs on an AWS based Buildkite stack, but it should work on any agent.
+This hook wil expose secrets to your build steps stored in AWS SSM parameter store. Comparing to the S3 solution, this hook have the following features:
 
-Expose secrets to your build steps. AWS Paramaterstore parameters (Secure and clear) are made available to pipelines.
+* Speed. Typically it will take around 1-2 seconds to do the AWS API call and retrieve the secrets, while it may take around 10 seconds to retrieve the secrets from S3(YMMV).
+* Security. While the S3 based solution offers no organization and makes it hard to restrict which agent can access what, we have a meaningful hierarchy in SSM and we can easily control that in this plugin.
+* Finer-grained access control. We have implemented a simple ACL that can do access control, so you can say only this team in Buildkite or these pipelines in buildkite have access to these secrets.
 
-Different types of secrets are supported and exposed to your builds in appropriate ways:
+## Installation
+
+We will need to install this hook the bootstrap script. We have the following snippet in ours:
+
+```bash
+# Enable ssm secrets plugin at top level
+echo "export AWS_SSM_SECRETS_PLUGIN_ENABLED=1" >> /var/lib/buildkite-agent/cfn-env
+
+# Download the plugin
+SSM_PLUGIN_VER="v0.8.2"
+mkdir -p /usr/local/buildkite-aws-stack/hooks/aws-paramstore-secrets
+git clone -b "${SSM_PLUGIN_VER}" https://github.com/mikeknox/aws-paramstore-secrets-buildkite-plugin.git /usr/local/buildkite-aws-stack/hooks/aws-paramstore-secrets
+
+# Install the plugin
+cd /usr/local/buildkite-aws-stack/hooks/aws-paramstore-secrets && \
+  python3 -m pip install . && \
+  AWS_PARAMSTORE_SECRETS_PATH=/vendors/buildkite/ bash configure.sh
+```
+
+After this, we will need to add the following IAM policy to your buildkite instance profile (use the `ManagedPolicyARN` parameter in [elastic-ci-stack-for-aws](https://github.com/buildkite/elastic-ci-stack-for-aws)).
+
+```yml
+  BKInstancePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: buildkite-agent-instance-policies
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+            Resource:
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/vendors/buildkite/*"
+          - Effect: Allow
+            Action:
+              - 'ssm:DescribeParameters'
+            Resource:
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*"
+```
+
+## Usage
+
+We store these two types of items in SSM parameter store:
 
 - `ssh` for SSH Private Keys(Deploy keys)
 - `env` Environment Variables
-- `git-credential` via git's credential.helper
 
-Secrets (and in the clear) are exposed from a toplevel path (`BASE_PATH`):
+As mentioned before, we have defined the following SSM namespace hierarchy:
 
 - `<BASE_PATH>/<slug>/env/<env name>`
 - `<BASE_PATH>/<slug>/ssh/key`
-- `<BASE_PATH>/<slug>/git-credential/<cred name>`
 
-Where the `<slug>` could either be the pipeline slug or a calculated repo slug.
+Where `BASE_PATH` is where you want the SSM items to be saved. `slug` is either the slug of your pipeline or a calculated repo slug. For example: if your `BASE_PATH` is `/vendors/buildkite/`, and you have an environment variable name `ACCESS_TOKEN`  for a pipeline named `build-awesome-product`, you'll need to save an SSM item with name `/vendors/buildkite/build-awesome-product/env/ACCESS_TOKEN`. For ssh deploy keys, we would prefer to store it in a repo-based slug so if the repository is used in many pipelines, we don't have to define the key for all the pipelines. In this case, if our repo is `git@github.com:torvarlds/linux.git`, the calculated ssm path would be `/vendors/buildkite/github.com_torvarlds_linux.git/ssh/key`.
 
-The core functionality is written in Python, as it is much easier to manipulate strings/urls in Python.
+## Advanced Features
 
-## Note
+We also have a few more advanced usage patterns to exert the full strength of this plugin:
 
-The existing S3 / Vault plugins do not break out the secrets individually.
+* Global secrets
+* Different `BASE_PATH` for different agents
+* Global deploy key
+* Access Control lists
 
-There is a virtual slug called `<global_defaults>`, which are downloaded for all pipelines in addition to the pipeline specific ones.
+We will explain these use cases one by one.
 
-## Example
+### Global secrets
 
-Save a git deploy key either to `{ssm_store_path}/{pipeline}/ssh/key` or preferably to `{ssm_store_path}/{repo}/ssh/key` to allow any Buildkite pipeline to check out this repo.
+At times, we want to make some secrets globally accessible for all projects. This is achieved by using a special slug named `global`.
 
-Save a build time secrets(`SOME_TOKEN`) to `{ssm_store_path}/{pipeline}/env/SOME_TOKEN`, and it shall be available in build time.
+For example, we have an internal go module hosted in JFrog and we would like it to be available to all the user repositories, so we have added an SSM item under `<BASE_PATH>/global/env/JFROG_GO_TOKEN`. Later on, all pipelines can reference this secret as `JFROG_GO_TOKEN` in their pipeline environment variables.
 
-## IAM permissions
+Another use case is, we are have a few internal buildkite plugins hosted on our SCM and we would like to make it public internally. So we have created a deploy key for all the plugins, and we saved this key to `<BASE_PATH>/global/ssh/key`, so it's always available.
 
-The agent needs to have the following permissions in IAM to access the secrets:
+If you think about it, the global ssh key is a bit hard to implement, because this is not really like an environment variable you can set and forget, we need to make it work together with another SSH key for the project, and it won't work if you add multiple deploy keys to the same SSH agent, as only the first SSH key will be attempted. So under the hood, we run multiple SSH agents in the process, and use the `pre-checkout` and `post-checkout` hooks to switch the SSH environment variables.
 
-```yml
-{
-    "Action": [
-        "ssm:GetParameter*"
-    ],
-    "Resource": [
-        "arn:aws:ssm:<region>:<account>:parameter/<secret path>*"
-    ],
-    "Effect": "Allow"
-},
-{
-    "Action": [
-        "ssm:DescribeParameters"
-    ],
-    "Resource": [
-        "arn:aws:ssm:<region>:<account>:*"
-    ],
-    "Effect": "Allow"
-}
-```
+### Different `BASE_PATH` for different agents
 
-## Access Controls
+We are using Buildkite for our build and deployment process, and we have an internal requirement that we are managing the permission right. Our solution is to use separate buildkite agents with different access to different SSM namespaces. For example, agents from the default queue will have `BASE_PATH` set to `/vendors/buildkite/default/`, and the agents for our CDE(Card Data Environment) environment will have `BASE_PATH` set to `/vendors/buildkite/cde`. We have the IAM Role setup so that the default queue cannot use the build secrets for CDE.
+
+### Access Control lists
 
 A limited form of ACL has been added to this plugin, each `<slug>` can contain:
 
@@ -68,73 +97,19 @@ A limited form of ACL has been added to this plugin, each `<slug>` can contain:
 
 If either of these params exist at a node, then access is denied unless the current team and/or pipeline is listed.
 
-### Determining teams
-
 The plugin assesses team memberhsip based on data supplied in `BUILDKITE_BUILD_CREATOR_TEAMS` and `BUILDKITE_UNBLOCKER_TEAMS` environment variables.
 :warning: If both of those variables are empty, *and* `BUILDKITE_SOURCE == "schedule"` then `allwoed_teams` is deemed true.
 The assumption is that the scheduled build was created by an approved individiual, as creating a Scheduled Build in BuildKite requires 'Full Access' to the pipeline.
 
-### ACL Note
-
 Don't let this lure you into a false sense of security; as your agent has access to the Parameter Store tree with the secrets, any pipeline could bypass the plugin and access the secrets directly.
-
-## Uploading Secrets
-
-### Environment secrets
-
-Environment variable secrets are handled differently in this Parameterstore plugin to the S3 plugin.
-
-Each environment variable is treated as an individually secret under the `env` node for a project.
-eg.
-project foo/env/var1
-project foo/env/var2
-etc
-
-### SSH Keys
-
-This example uploads an ssh key and an environment file to the base of the Vault secret path, which means it matches all pipelines that use it. You use per-pipeline overrides by adding a path prefix of `/my-pipeline/`.
-
-### Git credentials
-
-For git over https, you can use a `git-credentials` file with credential urls in the format of:
-
-```bash
-https://user:password@host/path/to/repo
-```
-
-These are then exposed via a [gitcredential helper](https://git-scm.com/docs/gitcredentials) which will download the credentials as needed.
-
-## Options
-
-### `path`
-
-defaults to: `/vendors/buildkite`
-This is expected to be a path in Parameterstore where we should look for secrets.
-It is expected that your BuildKite agent will have permissions to read all items in this path, and decrypt any secrets there.
-
-Alternative Base Path to use for secrets
-
-### `default_key`
-
-defaults to: `global`
-
-A slug for default secrets that are always loaded.
 
 ## Testing
 
 To run locally:
 
 ```bash
-BUILDKITE_PLUGIN_AWS_PARAMSTORE_SECRETS_DUMP_ENV=true
-BUILDKITE_PLUGIN_AWS_PARAMSTORE_PATH=/base_path
-BUILDKITE_PIPELINE_SLUG=my_pipeline
-hooks/environment
-```
-
-To test with BATS:
-
-```bash
-docker-compose run tests
+docker-compose run shellcheck
+docker-compose run unittest
 ```
 
 ## License
