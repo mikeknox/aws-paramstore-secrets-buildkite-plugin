@@ -10,7 +10,7 @@ services:
   unittest:
     build:
       context: .
-    command: python3 -m unittest
+    command: sh -c "coverage run --source=bk_ssm_secrets --omit='*/tests/*' -m unittest && coverage report -m"
     working_dir: /plugin
     volumes:
       - ".:/plugin"
