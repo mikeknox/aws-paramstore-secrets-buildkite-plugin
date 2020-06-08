@@ -4,6 +4,7 @@ import io
 import os
 import types
 import unittest
+import unittest.mock
 
 from ..helpers import (
     dump_env_secrets,
