@@ -31,12 +31,12 @@ class BkSecrets(object):
     def parse_ssh(self):
         if self.slug == os.environ["BUILDKITE_PIPELINE_SLUG"]:
             if 'ssh' in self.store:
-                logging.warn("Ignore pipeline level ssh keys.")
+                logging.warning("Ignore pipeline level ssh keys.")
             return
 
         if self.slug == config.DEFAULT_SLUG:
             if 'ssh' in self.store:
-                logging.warn("Ignore default ssh keys.")
+                logging.warning("Ignore default ssh keys.")
             return
 
         self.check_acls()
@@ -77,21 +77,16 @@ class BkSecrets(object):
             allowed_teams = set(self.store['allowed_teams'].split('\n'))
             is_scheduled = os.environ.get("BUILDKITE_SOURCE", "") == 'schedule'
 
-            if current_teams == set() and not is_scheduled:
-                logging.error(
-                    f"No teams are defined, and this is not a scheduled build."
-                )
-                raise RuntimeError(
-                    "Your build does not have access to this namespace."
-                )
+            if current_teams == set() and is_scheduled:
+                logging.debug(f"Allowing scheduled builds.")
+                return
             elif current_teams & allowed_teams:
-                logging.error(
-                    f"current teams: {current_teams}. allowed: {allowed_teams}"
-                )
-                raise RuntimeError(
-                    "Your team does not have access to this namespace."
-                )
-            logging.debug(f"Passing allowed teams")
+                logging.debug(f"Passing allowed teams")
+                return
+
+            raise RuntimeError(
+                "Your team does not have access to this namespace."
+            )
 
     def check_acls(self):
         self.check_pipeline_allowed()
