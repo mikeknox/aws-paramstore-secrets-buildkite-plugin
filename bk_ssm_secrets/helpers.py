@@ -108,17 +108,17 @@ def start_ssh_agent(ssh_key_text):
     return envvars
 
 def get_buildkite_teams():
-  """
+    """
     Return array of unqiue team names from:
     BUILDKITE_BUILD_CREATOR_TEAMS && BUILDKITE_UNBLOCKER_TEAMS
-  """
-  get_team = lambda env: set(os.environ.get(env, '').split(":"))
-  current_teams = set.union(
-    get_team("BUILDKITE_BUILD_CREATOR_TEAMS"),
-    get_team("BUILDKITE_UNBLOCKER_TEAMS")
-  )
-  
-  # If one of the vars is undefined, an empty string ends up in the list
-  if '' in current_teams:
-    current_teams.remove('')
-  return current_teams
+    """
+    get_team = lambda env: set(os.environ.get(env, '').split(":"))
+    current_teams = set.union(
+        get_team("BUILDKITE_BUILD_CREATOR_TEAMS"),
+        get_team("BUILDKITE_UNBLOCKER_TEAMS")
+    )
+
+    # If one of the vars is undefined, an empty string ends up in the list
+    if '' in current_teams:
+        current_teams.remove('')
+    return current_teams

@@ -1,10 +1,5 @@
 version: '3.7'
 services:
-  tests:
-    image: buildkite/plugin-tester
-    volumes:
-      - .:/plugin
-
   shellcheck:
     image: koalaman/shellcheck:latest
     command: -x lib/bats-helper.bash hooks/environment hooks/post-checkout hooks/pre-checkout hooks/pre-exit configure.sh
@@ -12,10 +7,10 @@ services:
     volumes:
       - ".:/plugin"
 
-  pytests:
+  unittest:
     build:
       context: .
-    command: python3 -m unittest
+    command: sh -c "coverage run --source=bk_ssm_secrets --omit='*/tests/*' -m unittest && coverage report -m"
     working_dir: /plugin
     volumes:
       - ".:/plugin"
