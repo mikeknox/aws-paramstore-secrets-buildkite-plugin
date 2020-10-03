@@ -9,6 +9,7 @@ AWS_PARAMSTORE_SECRETS_DEFAULT_KEY="${AWS_PARAMSTORE_SECRETS_DEFAULT_KEY:-"globa
 AWS_PARAMSTORE_SECRETS_SECRETS_PATH="${AWS_PARAMSTORE_SECRETS_PATH:-"/vendors/buildkite"}"
 AWS_PARAMSTORE_SECRETS_GLOBAL_SSH="${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH:-}"
 
+mkdir -p /usr/local/buildkite-aws-stack/plugins/aws-paramstore-secrets
 cat << EOF > /usr/local/buildkite-aws-stack/plugins/aws-paramstore-secrets/custom-defaults
 export AWS_PARAMSTORE_SECRETS_VERBOSE="${AWS_PARAMSTORE_SECRETS_VERBOSE}"
 export AWS_PARAMSTORE_SECRETS_DEFAULT_KEY="${AWS_PARAMSTORE_SECRETS_DEFAULT_KEY}"
@@ -17,6 +18,7 @@ export AWS_PARAMSTORE_SECRETS_GLOBAL_SSH="${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}"
 EOF
 
 # Install the hooks, repo first so pipeline can override the repo preset.
+mkdir -p /etc/buildkite-agent/hooks
 cat << 'EOF' >> /etc/buildkite-agent/hooks/environment
 
 # --- Start AWS paramstore secrets plugin ---
