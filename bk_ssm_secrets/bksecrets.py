@@ -29,11 +29,6 @@ class BkSecrets(object):
             os.environ[key_name] = value
 
     def parse_ssh(self):
-        if self.slug == os.environ["BUILDKITE_PIPELINE_SLUG"]:
-            if 'ssh' in self.store:
-                logging.warning("Ignore pipeline level ssh keys.")
-            return
-
         if self.slug == config.DEFAULT_SLUG:
             if 'ssh' in self.store:
                 logging.warning("Ignore default ssh keys.")
