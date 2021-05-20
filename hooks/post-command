@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "${AWS_PARAMSTORE_SECRETS_RUN_SSH_AGENT_DURING_COMMAND:-}" != "1" ]]; then
+if [[ "${AWS_PARAMSTORE_SECRETS_RUN_SSH_AGENT_DURING_COMMAND:-}" == "1" ]]; then
   export SSH_AUTH_SOCK="${ORIG_SSH_AUTH_SOCK}"
   export SSH_AGENT_PID="${ORIG_SSH_AGENT_PID}"
 
