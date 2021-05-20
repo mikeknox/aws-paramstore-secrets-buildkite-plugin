@@ -56,17 +56,17 @@ fi
 EOF
 
 cat << 'EOF' >> /etc/buildkite-agent/hooks/post-checkout
-if [[ "${AWS_SSM_SECRETS_PLUGIN_ENABLED:-}" == "1" && "${AWS_PARAMSTORE_SECRETS_RUN_SSH_AGENT_DURING_COMMAND:-}" != "1" ]]
+if [[ -n "${AWS_SSM_SECRETS_PLUGIN_ENABLED:-}" && "${AWS_SSM_SECRETS_PLUGIN_ENABLED:-}" == "1" ]]
 then
   source /usr/local/buildkite-aws-stack/plugins/aws-paramstore-secrets/hooks/post-checkout
 fi
 EOF
 
 cat << 'EOF' >> /etc/buildkite-agent/hooks/post-command
-if [[ "${AWS_SSM_SECRETS_PLUGIN_ENABLED:-}" == "1" && "${AWS_PARAMSTORE_SECRETS_RUN_SSH_AGENT_DURING_COMMAND:-}" == "1" ]]
+if [[ -n "${AWS_SSM_SECRETS_PLUGIN_ENABLED:-}" && "${AWS_SSM_SECRETS_PLUGIN_ENABLED:-}" == "1" ]]
 then
   source /usr/local/buildkite-aws-stack/plugins/aws-paramstore-secrets/hooks/post-command
 fi
 EOF
 
-chmod +x /etc/buildkite-agent/hooks/{post-checkout,pre-checkout,pre-exit,environment}
+chmod +x /etc/buildkite-agent/hooks/{post-checkout,pre-checkout,pre-exit,environment,post-command}
