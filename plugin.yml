@@ -1,0 +1,2 @@
+name: AWS SSM Secrets
+description: Expose secrets to your build steps that are stored in AWS SSM parameter store.
