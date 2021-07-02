@@ -13,10 +13,15 @@ get-ssm () {
 
 if [ -n "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" ]
 then
-  echo "Adding Global SSH deploy key to a default SSH agent"
-  # shellcheck disable=SC2046
+  # AWS_PARAMSTORE_SECRETS_GLOBAL_SSH can optionally be a list delimited by `:`
+  GLOBAL_SSH_KEYS=(${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH//:/ })
   eval $(/usr/bin/ssh-agent | sed "/^echo/d")
-  get-ssm "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" | ssh-add - 2>/dev/null
+  for KEY in ${GLOBAL_SSH_KEYS[@]}
+  do
+    echo "Adding ${KEY} deploy key to a default SSH agent"
+    # shellcheck disable=SC2046
+    get-ssm "${KEY}" | ssh-add - 2>/dev/null
+  done
 fi
 
 exports=$(bk-ssm-secrets)
