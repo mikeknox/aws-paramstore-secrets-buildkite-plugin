@@ -14,7 +14,7 @@ get-ssm () {
 if [ -n "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" ]
 then
   # AWS_PARAMSTORE_SECRETS_GLOBAL_SSH can optionally be a list delimited by `:`
-  GLOBAL_SSH_KEYS=(${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH//:/ })
+  GLOBAL_SSH_KEYS=(`echo "${AWS_PARAMSTORE_SECRETS_GLOBAL_SSH}" | sed 's/:/\n/g'`)
   eval $(/usr/bin/ssh-agent | sed "/^echo/d")
   for KEY in ${GLOBAL_SSH_KEYS[@]}
   do
