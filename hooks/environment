@@ -24,6 +24,8 @@ then
   done
 fi
 
+# Due to system level changes, /usr/local/bin was no longer added to PATH
+PATH="/usr/local/bin:$PATH"
 exports=$(bk-ssm-secrets)
 
 set -o allexport
