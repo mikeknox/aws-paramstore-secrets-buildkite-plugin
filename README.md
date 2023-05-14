@@ -1,6 +1,9 @@
 # Elastic CI Stack SSM secrets hooks
 
-__This project was heavily inspired by [Elastic CI stack S3 secreets hook](https://github.com/buildkite/elastic-ci-stack-s3-secrets-hooks)__
+:warning: I can't actively support or develop this plugin at the moment.
+I would strongly recommend looking at this <https://github.com/buildkite-plugins/aws-ssm-buildkite-plugin> instead.
+
+__This project was heavily inspired by [Elastic CI stack S3 secrets hook](https://github.com/buildkite/elastic-ci-stack-s3-secrets-hooks)__
 
 This hook wil expose secrets to your build steps stored in AWS SSM parameter store. Comparing to the S3 solution, this hook have the following features:
 
@@ -53,13 +56,13 @@ After this, we will need to add the following IAM policy to your buildkite insta
 
 We store these two types of items in SSM parameter store:
 
-- `ssh` for SSH Private Keys(Deploy keys)
-- `env` Environment Variables
+* `ssh` for SSH Private Keys(Deploy keys)
+* `env` Environment Variables
 
 As mentioned before, we have defined the following SSM namespace hierarchy:
 
-- `<BASE_PATH>/<slug>/env/<env name>`
-- `<BASE_PATH>/<slug>/ssh/key`
+* `<BASE_PATH>/<slug>/env/<env name>`
+* `<BASE_PATH>/<slug>/ssh/key`
 
 Where `BASE_PATH` is where you want the SSM items to be saved. `slug` is either the slug of your pipeline or a calculated repo slug. For example: if your `BASE_PATH` is `/vendors/buildkite/`, and you have an environment variable name `ACCESS_TOKEN`  for a pipeline named `build-awesome-product`, you'll need to save an SSM item with name `/vendors/buildkite/build-awesome-product/env/ACCESS_TOKEN`. For ssh deploy keys, we would prefer to store it in a repo-based slug so if the repository is used in many pipelines, we don't have to define the key for all the pipelines. In this case, if our repo is `git@github.com:torvarlds/linux.git`, the calculated ssm path would be `/vendors/buildkite/github.com_torvarlds_linux.git/ssh/key`.
 
@@ -92,14 +95,14 @@ We are using Buildkite for our build and deployment process, and we have an inte
 
 A limited form of ACL has been added to this plugin, each `<slug>` can contain:
 
-- `allowed_teams`   - A list of teams that can access the secrets at this node
-- `allowed_pipelines`   - A list of pipelines that can access the teams at this node
+* `allowed_teams`   - A list of teams that can access the secrets at this node
+* `allowed_pipelines`   - A list of pipelines that can access the teams at this node
 
 If either of these params exist at a node, then access is denied unless the current team and/or pipeline is listed.
 
-The plugin assesses team memberhsip based on data supplied in `BUILDKITE_BUILD_CREATOR_TEAMS` and `BUILDKITE_UNBLOCKER_TEAMS` environment variables.
-:warning: If both of those variables are empty, *and* `BUILDKITE_SOURCE == "schedule"` then `allwoed_teams` is deemed true.
-The assumption is that the scheduled build was created by an approved individiual, as creating a Scheduled Build in BuildKite requires 'Full Access' to the pipeline.
+The plugin assesses team membership based on data supplied in `BUILDKITE_BUILD_CREATOR_TEAMS` and `BUILDKITE_UNBLOCKER_TEAMS` environment variables.
+:warning: If both of those variables are empty, *and* `BUILDKITE_SOURCE == "schedule"` then `allowed_teams` is deemed true.
+The assumption is that the scheduled build was created by an approved individual, as creating a Scheduled Build in BuildKite requires 'Full Access' to the pipeline.
 
 Don't let this lure you into a false sense of security; as your agent has access to the Parameter Store tree with the secrets, any pipeline could bypass the plugin and access the secrets directly.
 
